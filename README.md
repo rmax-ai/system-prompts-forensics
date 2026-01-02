@@ -1,40 +1,46 @@
 # System Prompt Forensics
 
-A human-friendly guide to the project.
+System prompts in AI-assisted developer tools are more than just task instructions; they function as implicit "constitutions" that define an agent's identity, authority, and safety boundaries. This repository provides a forensic framework for treating these prompts as governance artifacts, offering a methodology to normalize, analyze, and compare them across major assistants like GitHub Copilot and Codex. By decomposing complex prompts into modular **Prompt Governance Primitives (PGPs)**, we surface the architectural trade-offs and control mechanisms that shape modern agentic systems, moving governance from hidden strings into auditable infrastructure.
 
-## What this is
+## What we analyzed
 
-We treat captured “system prompts” as governance documents. Rather than viewing prompts as task instructions, we study them as constitutions that define what an AI agent is, what it can do, what it must not do, and how it stops. The goal is to reverse‑engineer these constitutions across developer tools (IDE assistants, CLIs, agent frameworks) and surface reproducible design patterns for safer, more predictable agent systems.
+We performed a structural analysis of system prompts from leading AI developer tools, including **GitHub Copilot (CLI and VS Code)**, **Codex (Execution and Review modes)**, and **OpenCode**. Our method involves capturing raw HTTP payloads, redacting sensitive data, and normalizing the prompts into a canonical YAML schema. This allows for line-by-line comparison of how different tools handle authority boundaries, workspace visibility, tool mediation, and termination logic.
 
-## What we produce
+## What’s new
 
-- A small set of composable prompt primitives (identity, authority, scope, tools, feedback, termination).
-- A taxonomy of prompt architectures and their risk models.
-- Line-by-line, normalized analyses of captured system prompts (YAML).
-- Comprehensive research reports and comparative analyses across major AI assistants.
-- A canonical agent constitution prompt designed by construction (not prose).
-- Templates and scripts to normalize, analyze, and compare prompts.
+This project introduces the concept of **System Prompts as Governance Artifacts**, shifting the focus from prompt engineering to prompt governance. We identify and catalog **Prompt Governance Primitives (PGPs)**—recurring, modular control structures (e.g., "Approval-gated execution", "Stop-on-unexpected-change") that can be reused to design safer agents. This architectural approach treats the prompt as a layered contract between the user, the policy, and the model.
 
-## Why it matters
+## How to navigate the repo
 
-System prompts encode a tool’s implicit assumptions about agency, risk, and control. Making those assumptions explicit lets teams design agent-first systems with clear governance and predictable behavior—moving governance out of hidden strings and into auditable infrastructure.
+- **[Research Report](data/final-research-report.revised.md)**: The primary synthesis of our findings, architectural conclusions, and comparative analysis.
+- **[PGP Appendix](data/appendix-governance-primitives.revised.md)**: A detailed registry of Prompt Governance Primitives, categorized by governance axis and risk mitigation.
+- **[Normalized Analyses](data/analysis/)**: Structured YAML files for each assistant mode, providing a granular view of their internal constitutions.
+- **[Schema & Tooling](data/schema/)**: The canonical schema and scripts used to drive the normalization process.
+
+## Who this is for
+
+- **Researchers**: Studying AI safety, alignment, and the governance of autonomous agents.
+- **Agent Builders**: Looking for reproducible design patterns and modular controls for predictable agent behavior.
+- **Tool Designers**: Seeking to implement clear authority boundaries and auditable safety constraints in developer tools.
+
+## Status and limitations
+
+This is a research-oriented project. All findings are derived from **static analysis of prompt text and architectural inference**. These analyses are **not runtime-validated**; they describe the *intended* governance as encoded in the prompt, which may differ from the model's actual behavior or the tool's underlying implementation.
 
 ## Quick overview of the repository
 
-- data/raw/ — raw HTTP captures (sensitive; MUST be redacted before sharing)
-- data/payload/ — parsed JSON payloads derived from captures
-- data/analysis/ — normalized YAML analyses (schema v0)
-- data/prompts/ — normalization instructions used by the analysis script
-- data/final-research-report.revised.md — synthesized findings and architectural conclusions
-- data/schema/ — canonical system-prompt schema (v0)
-- data/scripts/ — helpers for redaction and running the normalization
-- AGENTS.md — operational guidance and non-negotiable safety rules
+- [data/payload/](data/payload/) — parsed JSON payloads derived from captures
+- [data/analysis/](data/analysis/) — normalized YAML analyses (schema v0)
+- [data/prompts/](data/prompts/) — normalization instructions used by the analysis script
+- [data/schema/](data/schema/) — canonical system-prompt schema (v0)
+- [data/scripts/](data/scripts/) — helpers for redaction and running the normalization
+- [AGENTS.md](AGENTS.md) — operational guidance and non-negotiable safety rules
 
 ## Quickstart
 
-1. Redact sensitive headers first (always): [data/scripts/redact-headers.sh](data/scripts/redact-headers.sh) raw/example.request > raw/example.redacted.request
+1. Make sure you have installed `make`, `uv` and set `OPENAI_API_KEY`.
 
-2. Run the full analysis pipeline: `make -C data all`
+2. Run the full analysis pipeline: `make -C data`
 
 3. Inspect the results:
    - Normalized analyses: [data/analysis/](data/analysis/)
@@ -88,4 +94,19 @@ Pick one redacted payload in data/payload/ and normalize it into data/analysis/ 
 ## If you need help
 
 - Check the git history to see previous analyses and contributors.
-- Ask a project maintainer before publishing any real (even redacted) artifacts.
+- Ask the project maintainer before publishing any real (even redacted) artifacts.
+
+## Citation
+
+If you use this research or the provided artifacts in your work, please cite it as follows:
+
+```bibtex
+@misc{espinoza2026system,
+  author       = {Espinoza, R. Max},
+  title        = {System Prompt Forensics: A Governance Framework for AI Developer Tools},
+  year         = {2026},
+  version      = {v0.9.0},
+  publisher    = {GitHub},
+  howpublished = {\url{https://github.com/rmax/system-prompts-forensics/releases/tag/v0.9.0}}
+}
+```

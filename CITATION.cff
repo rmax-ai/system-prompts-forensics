@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software or the research findings, please cite it as below."
+authors:
+  - family-names: "Espinoza"
+    given-names: "R. Max"
+    orcid: "https://orcid.org/0000-0000-0000-0000" # Placeholder, update if known
+title: "System Prompt Forensics: A Governance Framework for AI Developer Tools"
+version: 1.0.0
+date-released: 2026-01-03
+url: "https://github.com/rmax/system-prompt-forensics/releases/tag/v0.9.0"
+abstract: >-
+  A forensic framework for treating AI system prompts as governance artifacts.
+  This project provides a methodology to normalize, analyze, and compare
+  system prompts across major AI assistants, decomposing them into modular
+  Prompt Governance Primitives (PGPs) to surface architectural trade-offs
+  and control mechanisms.
+keywords:
+  - AI Governance
+  - System Prompts
+  - AI Safety
+  - Autonomous Agents
+  - Forensic Analysis
