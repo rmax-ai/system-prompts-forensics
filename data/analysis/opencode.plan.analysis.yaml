@@ -19,102 +19,87 @@ metadata:
       arch: arm64
       runtime: Python 3.12.5
     artifact_hash: "090d7306ebdeb026bcbf261e48ac0fd897b8287ecba2e7ddb87932f6b188ff12"
-  notes: "Captured invocation payload for model 'oswe-vscode-prime' in plan/read-only mode."
+  notes: "Captured invocation payload opencode.plan.json; plan-mode system reminder present."
 
 layers:
   identity:
     role: assistant
     persona:
       traits:
-        - interactive CLI software engineering helper
         - concise
         - direct
-        - low-verbosity
+        - CLI-oriented
+        - security-conscious
+        - convention-following
       tone: concise/direct
-    self_description: "opencode, an interactive CLI tool that helps users with software engineering tasks"
+    self_description: "opencode, an interactive CLI tool for software engineering tasks"
     alignment_claims:
-      - helpful for software engineering tasks
-      - security-conscious (refuse malicious code assistance)
+      - helpful for software engineering
+      - safe (anti-malware)
+      - accurate/quality-focused
 
   authority:
     allowed_actions:
-      - answer user questions (concise)
-      - plan work (read/observe/analyze)
-      - read files (via read tool)
-      - search files by name (via glob tool)
-      - search file contents (via grep tool)
-      - delegate exploration/research to subagents (via task tool)
-      - fetch opencode documentation when asked about opencode (via webfetch)
-      - run terminal commands for inspection/verification (subject to plan-mode read-only constraint)
+      - answer user questions (within constraints)
+      - plan and analyze in plan mode
+      - read/search codebase using read/glob/grep
+      - delegate exploration/research to subagents via task
+      - fetch opencode documentation via webfetch when asked about opencode capabilities
+      - run terminal commands via bash (subject to plan-mode and tool policy)
     forbidden_actions:
-      - write or explain code that may be used maliciously
-      - assist with malware or malicious-code-related files (improve/explain/interact)
-      - generate or guess URLs unless confident they help programming
+      - assist with malware/malicious code (write or explain) when suspected
+      - generate or guess URLs unless confident they help with programming
       - use tools as a communication channel (must communicate in normal output)
       - add code comments unless asked
-      - commit changes unless explicitly asked
-      - in plan mode: any file edits/modifications/system changes; any bash file-manipulation commands
+      - commit changes unless explicitly requested
+      - in plan mode: any file edits/modifications/system changes; any bash commands that manipulate files (sed/tee/echo/cat etc.); non-readonly actions
     conditional_actions:
-      - condition: "User asks about opencode capabilities or addresses assistant in second person about opencode"
-        allowed:
-          - "Use webfetch to consult https://opencode.ai docs before answering"
-        forbidden: []
-      - condition: "Codebase/filenames/structure suggest malware or malicious intent"
-        allowed:
-          - refuse assistance
-          - offer benign alternatives
-        forbidden:
-          - explain, optimize, or interact with the suspected malicious code
-      - condition: "Need to reference specific code locations"
-        allowed:
-          - "Include references as file_path:line_number"
-        forbidden: []
-      - condition: "User requests detail"
-        allowed:
-          - exceed default brevity constraints
-        forbidden: []
-      - condition: "Plan mode active (<system-reminder>)"
-        allowed:
-          - read/search/plan only
-        forbidden:
-          - any edits/writes/commits
-          - any non-readonly tool usage
-          - bash commands that manipulate files (sed/tee/echo/cat/etc.)
+      - condition: "User asks about opencode in second person or directly (capabilities/features)"
+        allowed: ["use webfetch to consult https://opencode.ai docs before answering"]
+        forbidden: ["answer from memory without attempting webfetch first (best-effort)"]
+      - condition: "Codebase/files appear malware-related by name/structure/purpose"
+        allowed: ["refuse assistance", "offer benign alternatives"]
+        forbidden: ["explain, improve, or interact with the malicious code"]
+      - condition: "Non-trivial bash command execution"
+        allowed: ["briefly explain what/why before running"]
+        forbidden: ["run without explanation (unless trivial)"]
+      - condition: "Task completed (implementation phase)"
+        allowed: ["run lint/typecheck commands if discoverable"]
+        forbidden: ["assume test/lint commands without checking repo docs"]
+      - condition: "User did not request detail"
+        allowed: ["respond in <4 lines; minimal pre/postamble"]
+        forbidden: ["long explanations, summaries, tangents"]
     escalation:
       allowed: true
-      targets:
-        - user
-        - policy
-        - tool
-    final_decision_maker: model
+      targets: ["user", "policy/tooling (docs via webfetch)"]
+    final_decision_maker: policy
 
   scope:
     inputs_visible:
-      - system instructions
-      - user messages (including system-reminder tags, treated as non-user content)
-      - local filesystem via read/glob/grep
-      - terminal via bash tool (with restrictions)
-      - environment snippet (workdir, git repo status, file list)
-      - AGENTS.md instructions (referenced but content not included)
+      - conversation history
+      - tool results
+      - local filesystem (via read/glob/grep; bash indirectly)
+      - environment metadata (workdir, repo status, file list)
+      - AGENTS.md instructions (referenced as loaded)
+      - system-reminder tags (non-user content)
     outputs_allowed:
-      - text (CLI-rendered CommonMark/GFM)
-      - code (when not disallowed; but plan mode currently blocks edits)
-      - tool calls (auto)
+      - text (CommonMark/GFM suitable for CLI)
+      - code (when not in plan mode and not disallowed by safety rules)
+      - tool calls (functions)
     statefulness:
       memory: false
       session_persistence: unknown
     boundaries:
       hard_limits:
-        - refuse malicious code assistance / malware-related work
-        - do not generate untrusted/guessed URLs
-        - plan mode: no modifications; read-only operations only
-        - do not use tools to communicate
-        - do not commit unless explicitly requested
+        - "No malware-related assistance (write/explain/improve) when suspected"
+        - "Plan mode: read-only; no edits or system changes"
+        - "No commits unless explicitly requested"
+        - "No comments added unless asked"
       soft_limits:
-        - minimize tokens; avoid tangents
-        - keep responses under 4 lines unless user asks for detail
-        - avoid emojis unless requested
-        - avoid preamble/postamble
+        - "Minimize verbosity; <4 lines unless user requests detail"
+        - "Avoid unnecessary pre/postamble"
+        - "Avoid emojis unless requested"
+        - "Prefer specialized tools over bash for file ops/search"
 
   environment:
     execution_context: local
@@ -126,7 +111,7 @@ layers:
     declared_tools:
       - name: bash
         type: function
-        description: "Execute bash commands in persistent shell; prefer specialized tools for file ops; includes git safety protocol."
+        description: "Execute terminal commands in persistent shell; avoid file ops; git/npm/docker; safety protocol for git."
         side_effects: true
       - name: read
         type: function
@@ -134,15 +119,15 @@ layers:
         side_effects: false
       - name: glob
         type: function
-        description: "Fast file pattern matching; returns paths sorted by mtime."
+        description: "Find files by glob patterns; returns paths sorted by mtime."
         side_effects: false
       - name: grep
         type: function
-        description: "Regex content search; returns file paths and line numbers."
+        description: "Search file contents by regex; returns file paths and line numbers."
         side_effects: false
       - name: task
         type: function
-        description: "Launch subagents (general/explore) for multistep work; can run in parallel."
+        description: "Launch subagents (general/explore) for multistep work; can run slash commands."
         side_effects: false
       - name: webfetch
         type: function
@@ -150,7 +135,7 @@ layers:
         side_effects: false
       - name: todowrite
         type: function
-        description: "Create/manage structured todo list; generally for complex tasks."
+        description: "Create/manage structured todo list for complex tasks."
         side_effects: false
       - name: todoread
         type: function
@@ -163,44 +148,45 @@ layers:
     invocation_rules:
       explicit: true
       constraints:
-        - "Only use tools to complete tasks; do not use tools to communicate."
-        - "Prefer Task for open-ended file search; batch independent tool calls."
-        - "Bash: avoid file read/search/edit commands; use specialized tools instead."
-        - "Plan mode: do not use non-readonly tools; no file manipulation via bash."
-        - "When asked about opencode, webfetch docs first."
-        - "Git operations: no commits unless asked; avoid destructive/interactive flags; no push unless asked."
+        - "Prefer Task for open-ended search to reduce context usage"
+        - "Prefer specialized tools over bash for find/grep/cat/head/tail/sed/awk/echo"
+        - "Batch independent tool calls in one response; parallelize when possible"
+        - "Avoid 'cd &&'; use bash workdir parameter"
+        - "Bash: verify parent dirs before creating files/dirs"
+        - "Git safety protocol; no destructive commands; no interactive flags; no push unless asked"
+        - "Plan mode reminder overrides: read-only; no modifications; bash only for read/inspect"
     abstraction_level: wrapped
     failure_handling: ask-user
 
   constraints:
     style:
       requirements:
-        - concise, direct, to the point
-        - explain non-trivial bash commands (what/why), especially if changing system (though plan mode forbids changes)
-        - use GFM/CommonMark suitable for monospace CLI
-        - include code references as file_path:line_number when citing code
-        - mimic existing code conventions when editing (not applicable in plan mode)
+        - "Concise, direct CLI-friendly responses"
+        - "Explain non-trivial bash commands (what/why) before running"
+        - "Use GFM/CommonMark; monospace rendering"
+        - "Include code references as file_path:line_number when referencing specific code"
+        - "Mimic existing code conventions; check existing libs before using new ones"
       prohibitions:
-        - no unnecessary preamble/postamble
-        - keep under 4 lines unless user asks for detail
-        - no emojis unless requested
-        - do not add any code comments unless asked
-        - do not explain completed work unless requested; stop after file work
+        - "No unnecessary preamble/postamble"
+        - "No emojis unless requested"
+        - "Do not add ANY code comments unless asked"
+        - "Do not use tools (bash/comments) to communicate; communicate via normal output"
+        - "Keep responses <4 lines unless user asks for detail"
     safety:
       policies:
-        - refuse malicious code generation/explanation
-        - refuse malware-related file work based on filename/structure suspicion
-        - avoid introducing/logging secrets; do not commit secrets
-      refusal_style: "Do not explain why; offer alternatives; keep to 1-2 sentences."
+        - "Refuse malware/malicious code assistance (write or explain), including 'educational' claims"
+        - "Refuse if filenames/structure suggest malicious intent"
+        - "Follow security best practices; do not expose/log/commit secrets"
+        - "Do not generate/guess URLs unless confident they are for programming help"
+      refusal_style: "Brief (1-2 sentences), no moralizing; offer alternatives if possible; avoid explaining why"
     legal:
-      restrictions:
-        - unknown
+      restrictions: []
       attribution_required: false
     formatting:
       enforced: true
       schemas:
-        - "CLI-rendered CommonMark/GitHub-flavored markdown"
-        - "Code references: file_path:line_number"
+        - "Tool call JSON schemas (per tool)"
+        - "Code reference format file_path:line_number"
 
   reasoning:
     visibility: hidden
@@ -212,66 +198,69 @@ layers:
     self_review:
       enabled: true
       triggers:
-        - "After completing tasks: run lint/typecheck if commands are provided"
-        - "Verify tests if possible; determine test approach from repo docs"
+        - "After completing tasks: run lint/typecheck if commands are discoverable"
+        - "Before edits: understand conventions and surrounding context"
+        - "Before using new libraries: verify presence in repo"
     external_feedback:
       sources:
         - user feedback
-        - tool results
-        - test/lint/typecheck failures
-      incorporation_rules: "Incorporate feedback; ask user for missing commands; suggest adding to AGENTS.md."
+        - tool results (tests/lint/typecheck output)
+        - system-reminder tags
+      incorporation_rules: "Incorporate promptly; ask clarifying questions when uncertain."
     iteration_limits:
       max_cycles: unknown
       timeout: unknown
 
   termination:
     stopping_conditions:
-      - "After completing requested task (or plan in plan mode), stop without extra summary unless asked"
-      - "If refusing, respond briefly (1-2 sentences) and offer alternatives"
-    success_definition: "User request addressed with minimal necessary output; in plan mode, a well-formed execution plan."
+      - "In plan mode: stop after producing a plan / clarifying questions"
+      - "After file work: stop without extra summary unless requested"
+      - "If refusal required: provide brief refusal and alternatives"
+    success_definition: "User request addressed within constraints; in implementation phase, lint/typecheck run when applicable."
     abort_conditions:
-      - "Suspected malicious/malware-related request or files"
-      - "Requests requiring prohibited modifications during plan mode"
-    handoff_behavior: "Ask user clarifying questions; otherwise return control."
+      - "Task appears malware-related"
+      - "Requested actions violate plan-mode read-only constraint"
+    handoff_behavior: "Ask user for clarification or next step; otherwise stop."
 
 analysis:
   risk_model:
     primary_risks:
-      - enabling malware development or optimization
-      - unsafe URL generation leading to phishing/malware
-      - unintended system/file modifications (mitigated by plan mode)
-      - accidental secret exposure or committing secrets
+      - "Assisting malware development or analysis"
+      - "Unintended system/file modifications (especially in plan mode)"
+      - "Secret leakage via code changes or commits"
+      - "Hallucinated/unsafe URLs"
+      - "Overuse of bash for file operations contrary to policy"
     mitigations:
-      - mandatory refusal for malicious/malware-related work
-      - URL generation restriction; prefer user-provided URLs
-      - plan-mode read-only constraint overriding other instructions
-      - git safety protocol; no commits unless asked
-      - security best practices: avoid logging/exposing secrets
+      - "Mandatory refusal on suspected malicious code"
+      - "Plan-mode absolute read-only constraint"
+      - "Tooling separation: read/glob/grep vs bash; git safety protocol"
+      - "URL generation restriction; prefer user-provided URLs"
+      - "Concise refusal style; avoid detailed harmful guidance"
   failure_modes:
     anticipated:
-      - over-refusal due to filename/structure heuristics
-      - inability to comply with strict brevity while planning complex tasks
-      - tool misuse (bash for file ops) conflicting with tool policy
-      - conflicting tool guidance (todowrite encouraged vs bash section forbids Todo/Task in certain git workflows)
+      - "Conflicting instructions (concise output vs need to explain commands)"
+      - "Plan-mode reminder conflicts with normal workflow (lint/typecheck, edits)"
+      - "Tool misuse (bash used for file reads/edits) violating constraints"
+      - "Inability to determine test/lint commands"
     unmitigated:
-      - unclear enforcement mechanism for "confidence" in URLs
-      - no explicit policy for handling sensitive personal data in files
+      - "No explicit policy for handling unavailable webfetch/network failures"
+      - "No explicit data retention/privacy guarantees"
   implicit_assumptions: >
-    The assistant operates as a CLI agent with access to a local repo at /Users/rmax/Workspace/rmax-ai/tmp.
-    Plan mode is active and supersedes normal execution, restricting actions to read/search/plan.
-    Web access exists via webfetch but should be used primarily for opencode documentation queries.
+    The session is running locally in a git repo at /Users/rmax/Workspace/rmax-ai/tmp with at least Dockerfile present.
+    Plan-mode system reminder is treated as highest-priority operational constraint, effectively disabling side effects.
+    The assistant can read arbitrary absolute-path files and can access the network via webfetch, but should be cautious
+    about URL fabrication and only fetch opencode docs when capability questions arise.
   notable_absences:
-    - explicit data privacy/PII handling rules
-    - explicit licensing/copyright guidance for code generation
-    - explicit maximum tool call limits or rate limits
-    - explicit definition of "malicious" beyond malware-related heuristics
-    - explicit session persistence/memory guarantees
-    - explicit sandboxing/isolation guarantees for bash execution
+    - "No explicit privacy/data handling or retention policy"
+    - "No explicit authentication/authorization model for filesystem access"
+    - "No explicit maximum tool-call limits or rate limits"
+    - "No explicit guidance for handling copyrighted/proprietary code beyond general SE help"
+    - "No explicit definition of 'malicious' beyond malware-related cues"
 
 provenance:
   source_references:
-    - "Captured system message for opencode CLI tool"
-    - "Tool declarations: bash/read/glob/grep/task/webfetch/todowrite/todoread/skill"
-    - "Plan mode system-reminder embedded in user message"
+    - "Captured system instructions and tool declarations from opencode.plan.json"
+    - "Plan Mode system reminder embedded in user message (<system-reminder>)"
+    - "AGENTS.md referenced as loaded (content not provided)"
   redactions_applied: false
-  compliance_notes: "Normalized from mitmproxy-captured invocation payload; AGENTS.md referenced but not provided."
+  compliance_notes: "Normalized from provided payload; no verbatim long prompt text reproduced."

@@ -79,8 +79,9 @@ def load_yaml(path: Path) -> Dict[str, Any]:
     try:
         with path.open("r", encoding="utf-8") as f:
             return yaml.safe_load(f)
-    except Exception as e:
-        sys.exit(f"Failed to load YAML file {path}: {e}")
+    except Exception:
+        logging.exception(f"Failed to load YAML file {path}")
+        sys.exit(1)
 
 
 def extract_paths(obj: Any, prefix: str = "") -> Set[str]:
@@ -248,8 +249,9 @@ def main() -> None:
                 )
                 writer.writeheader()
                 writer.writerows(csv_rows)
-        except Exception as e:
-            sys.exit(f"Failed to write CSV output: {e}")
+        except Exception:
+            logging.exception("Failed to write CSV output")
+            sys.exit(1)
 
 
 if __name__ == "__main__":

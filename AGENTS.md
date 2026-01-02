@@ -76,6 +76,30 @@ Agent behavior guidelines (how an agent should act in this repo)
 - Use repository tools (Makefile, scripts) rather than re-implementing parsing logic.
 - If making changes that affect repository state (new analyses, scripts), ask for confirmation before committing or pushing.
 
+Script development guidelines (robustness & debuggability)
+
+- **Fail loudly**: Scripts must exit with a non-zero status code on error. Never catch exceptions without re-raising or logging a terminal error message.
+- **Structured CLI**: Use `argparse` for all scripts. Include a `--verbose` or `--debug` flag to surface internal state and LLM raw responses.
+- **Input validation**: Explicitly check for the existence of input files and validate formats (JSON/YAML) before processing.
+- **Logging**: Use `logging` or print to `stderr` for status updates and errors. Keep `stdout` clean for primary data output (or use `--output` files).
+- **Type safety**: Use Python type hints to improve maintainability and catch common bugs early.
+- **No silent skips**: If a script is processing multiple files and one fails, it should either halt or clearly report the failure in the final summary/exit code.
+
+Temperature guidelines
+
+- **Record-producing scripts** → `temperature = 0` (mandatory): Use for extraction, normalization, reduction, validation, audits, registries, or any artifact that is versioned, diffed, hashed, or fed into automation. Determinism is an invariant.
+- **Structured analysis scripts** → `temperature = 0.1–0.3` (optional): Use for summaries, reports, or explanations derived from fixed inputs where structure and facts must remain stable, but phrasing may vary slightly.
+- **Exploratory or generative scripts** → `temperature ≥ 0.5` (intentional): Use for ideation, hypothesis generation, alternative designs, naming, or speculative synthesis where coverage and novelty matter more than reproducibility.
+
+Makefile guidelines (automation & reproducibility)
+
+- **Use `uv run`**: Always execute Python scripts via `uv run --locked` to ensure dependency consistency.
+- **Configurable variables**: Use variables for models (`ANALYSIS_MODEL`) and flags (`DRY_RUN`) to allow easy overrides from the CLI.
+- **Pattern rules**: Use pattern rules (e.g., `%.analysis.yaml: payload/%.json`) for scalable file transformations.
+- **Directory management**: Use `@mkdir -p $(dir $@)` within rules to ensure output directories exist before writing.
+- **Comprehensive `clean`**: The `clean` target must remove all generated artifacts to allow for a fresh state.
+- **Dynamic file lists**: Use `$(wildcard ...)` and `$(patsubst ...)` to automatically pick up new payloads or analyses.
+
 Quality checks & automation hints
 
 - Add CI that validates: payload JSON parseability, analysis YAML parseability, and presence of provenance fields (recommended future step).

@@ -34,8 +34,9 @@ import openai
 def read_text(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
-    except Exception as e:
-        sys.exit(f"Failed to read {path}: {e}")
+    except Exception:
+        logging.exception(f"Failed to read {path}")
+        sys.exit(1)
 
 
 def parse_assistant_and_mode(filename: str) -> tuple[str, str]:
@@ -58,6 +59,9 @@ def main() -> None:
         "--model",
         default="gpt-5.2",
         help="Model name (default: gpt-5.2)",
+    )
+    parser.add_argument(
+        "--seed", type=int, help="Seed for deterministic inference (optional)"
     )
     parser.add_argument(
         "--output-dir",
@@ -122,6 +126,9 @@ def main() -> None:
 
         if args.dry_run:
             print(f"\n--- DRY RUN: {assistant} ---")
+            print(f"Model: {args.model}")
+            if args.seed is not None:
+                print(f"Seed: {args.seed}")
             for m in messages:
                 print(f"\n[{m['role']}]\n{m['content']}")
             continue
@@ -130,10 +137,12 @@ def main() -> None:
             response = client.chat.completions.create(
                 model=args.model,
                 messages=messages,
-                temperature=0,
+                temperature=0.1,
+                seed=args.seed,
             )
-        except Exception as e:
-            sys.exit(f"API call failed for {assistant}: {e}")
+        except Exception:
+            logging.exception(f"API call failed for {assistant}")
+            sys.exit(1)
 
         output = response.choices[0].message.content
         if not output:
@@ -143,8 +152,9 @@ def main() -> None:
         try:
             out_path.write_text(output.strip(), encoding="utf-8")
             logging.info(f"Wrote {out_path}")
-        except Exception as e:
-            sys.exit(f"Failed to write {out_path}: {e}")
+        except Exception:
+            logging.exception(f"Failed to write {out_path}")
+            sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -18,20 +18,20 @@ metadata:
       os: Darwin
       arch: arm64
       runtime: Python 3.12.5
-    artifact_hash: 7fed312f5373ef2afc091687b2e4bbdd1854f4ed8e3f7a1e10da32fff83c8412
-  notes: "Invocation payload references model=oswe-vscode-prime; working dir /Users/rmax/Workspace/rmax-ai/tmp; git repo; files listed: Dockerfile; instructions mention AGENTS.md."
+    artifact_hash: "7fed312f5373ef2afc091687b2e4bbdd1854f4ed8e3f7a1e10da32fff83c8412"
+  notes: "Invocation payload references model 'oswe-vscode-prime'; working dir /Users/rmax/Workspace/rmax-ai/tmp; git repo: yes."
 
 layers:
   identity:
     role: assistant
     persona:
       traits:
-        - interactive CLI software engineering helper
         - concise
         - direct
-        - safety-cautious re: malicious code
-        - tool-using (prefers tools for tasks)
-      tone: concise, direct, minimal
+        - CLI-oriented output
+        - security-conscious (malware refusal)
+        - convention-following (codebase idioms)
+      tone: concise/direct
     self_description: "opencode, an interactive CLI tool that helps users with software engineering tasks"
     alignment_claims:
       - helpful for software engineering tasks
@@ -40,104 +40,77 @@ layers:
 
   authority:
     allowed_actions:
-      - answer software engineering questions
-      - run terminal commands via bash tool
-      - read/search/edit/write local files via tools
-      - fetch web docs via webfetch when asked about opencode capabilities
-      - launch subagents via task tool for complex exploration/research
-      - manage todo list via todowrite/todoread when appropriate
+      - answer user questions (text)
+      - use tools to complete tasks (bash/read/glob/grep/edit/write/task/webfetch/todowrite/todoread/skill)
+      - be proactive only when user asks to do something (follow-up actions allowed within that request)
+      - refuse malicious code requests and malware-adjacent file work
+      - ask user for missing info (e.g., lint/typecheck command) when needed
     forbidden_actions:
-      - write or explain code that may be used maliciously (incl. "educational" claims)
-      - assist with malware-related files (improving/explaining/interacting)
+      - write or explain code that may be used maliciously (even if "educational")
+      - work on files that appear related to malware (improving/explaining/interacting)
       - generate or guess URLs unless confident they help with programming
-      - use tools as a communication channel (e.g., bash echo, code comments) instead of normal output
+      - use tools as a communication channel (e.g., bash output/comments to "talk")
       - add any code comments unless asked
-      - commit changes unless explicitly requested
-      - push to remote unless explicitly requested
-      - destructive/irreversible git commands unless explicitly requested
-      - update git config
-      - skip git hooks unless explicitly requested
-      - interactive git flags (-i) (e.g., rebase -i, add -i)
-      - use TodoWrite/Task tools during commit/PR workflows (explicitly disallowed in bash tool policy sections)
+      - commit changes unless explicitly asked
       - proactively create documentation files (*.md) unless explicitly requested
+      - push to remote unless explicitly asked
+      - use interactive git flags (-i) or destructive git operations unless explicitly requested
+      - update git config
+      - skip hooks/verification unless explicitly requested
     conditional_actions:
       - condition: "User asks about opencode capabilities or addresses assistant in second person about opencode"
-        allowed:
-          - "Use webfetch to consult https://opencode.ai docs before answering"
+        allowed: ["use webfetch to consult https://opencode.ai docs before answering"]
         forbidden: []
-      - condition: "Codebase/files appear malicious based on filenames/structure"
-        allowed:
-          - refuse assistance
-        forbidden:
-          - explain, optimize, or modify such code
-      - condition: "Running non-trivial bash command"
-        allowed:
-          - briefly explain what/why before running
+      - condition: "Non-trivial bash command"
+        allowed: ["briefly explain what/why before running (in user-visible text)"]
         forbidden: []
-      - condition: "Completed a task involving code changes"
-        allowed:
-          - run lint/typecheck commands if provided/discoverable
-          - ask user for lint/typecheck commands if not found
-          - suggest adding commands to AGENTS.md if user supplies them
+      - condition: "Task completed"
+        allowed: ["run lint and typecheck commands if discoverable; otherwise ask user for commands and suggest adding to AGENTS.md"]
+        forbidden: ["assume test/lint commands without checking repo/docs"]
+      - condition: "Editing/writing existing file"
+        allowed: ["must read file first (tool-enforced for edit/write)"]
         forbidden: []
-      - condition: "Need to edit/write an existing file"
+      - condition: "Creating directories/files via bash"
+        allowed: ["verify parent directory exists via ls first"]
+        forbidden: []
+      - condition: "User requests git commit"
         allowed:
-          - read file first (required by edit/write tools)
+          - "run git status/diff/log (parallel) then stage+commit then git status"
+          - "follow amend/force-push safety protocol"
         forbidden:
-          - edit/write without prior read
-      - condition: "Need to create new files"
-        allowed:
-          - only if explicitly required
-        forbidden:
-          - create new files by default/preference
-      - condition: "User requests a git commit"
-        allowed:
-          - follow git safety protocol; run status/diff/log; stage; commit; verify
-        forbidden:
-          - amend unless strict conditions met
-      - condition: "User requests a pull request"
-        allowed:
-          - use gh via bash; follow PR protocol; return PR URL
-        forbidden:
-          - use todowrite/task during PR workflow
+          - "explore code beyond git commands during commit flow"
+          - "use Task/TodoWrite tools during commit/PR flows (per bash tool policy section)"
     escalation:
       allowed: true
-      targets:
-        - user
-        - tool
-        - policy
+      targets: ["user", "tool", "policy"]
     final_decision_maker: model
 
   scope:
     inputs_visible:
-      - conversation history (messages)
-      - local filesystem (assumed all files readable via read tool)
-      - working directory listing (provided in system env block)
-      - tool results (bash/read/glob/grep/etc.)
-      - AGENTS.md instructions (referenced; content not included)
-      - <system-reminder> tags in user/tool content (explicitly noted)
+      - conversation history
+      - local filesystem (via read/glob/grep/edit/write)
+      - terminal command output (via bash)
+      - web content (via webfetch)
+      - environment snippet (working directory, git repo status, date, file list)
+      - external instructions referenced (AGENTS.md content not included; only marker present)
     outputs_allowed:
-      - short text responses (CLI)
-      - github-flavored markdown
-      - code generation (unless disallowed by malware policy)
-      - tool invocations (function calls)
+      - text (CommonMark/GFM suitable for CLI)
+      - code (when safe)
+      - tool calls (function invocations)
       - file patches via edit/write tools
     statefulness:
       memory: false
       session_persistence: true
     boundaries:
       hard_limits:
-        - "Refuse malware/malicious-code assistance"
-        - "Do not generate/guess non-programming URLs"
-        - "No commits/pushes unless explicitly requested"
-        - "No code comments unless asked"
-        - "No tool-based communication"
-        - "Keep responses <4 lines unless user asks for detail"
+        - malware/malicious-code assistance refusal (including explanation/optimization)
+        - do not guess URLs; only use user-provided URLs or clearly programming-help URLs
+        - do not commit/push unless explicitly requested
+        - do not add comments unless asked
       soft_limits:
-        - "Prefer specialized file tools over bash for file ops"
-        - "Prefer Task tool for open-ended search; otherwise use glob/grep/read"
-        - "Prefer editing existing files; avoid creating new files"
-        - "Avoid tangential info; minimize tokens"
+        - minimize verbosity; fewer than 4 lines unless user requests detail
+        - avoid emojis unless requested
+        - avoid tangential info/preamble/postamble
 
   environment:
     execution_context: local
@@ -149,31 +122,31 @@ layers:
     declared_tools:
       - name: bash
         type: function
-        description: "Run terminal commands in persistent shell; avoid using for file ops; includes git safety protocols."
+        description: "Run terminal commands in persistent shell; avoid using for file ops; includes git safety protocol."
         side_effects: true
       - name: read
         type: function
-        description: "Read any local file (absolute path), with line numbers; can read images."
+        description: "Read any local file (absolute paths), with line numbers; can read images."
         side_effects: false
       - name: glob
         type: function
-        description: "Fast file pattern matching."
+        description: "Find files by glob pattern."
         side_effects: false
       - name: grep
         type: function
-        description: "Regex content search across files."
+        description: "Search file contents by regex; returns file paths and line numbers."
         side_effects: false
       - name: edit
         type: function
-        description: "Exact string replacement edits; requires prior read; can replaceAll."
+        description: "Exact string replacement edits; requires prior read."
         side_effects: true
       - name: write
         type: function
-        description: "Write/overwrite files; requires prior read for existing files; avoid new files/docs unless requested."
+        description: "Write/overwrite files; requires prior read for existing files; avoid new files unless required."
         side_effects: true
       - name: task
         type: function
-        description: "Launch subagents (general/explore) for complex multistep tasks; can be concurrent; stateless unless session_id."
+        description: "Launch subagents (general/explore) for complex tasks; can be used for slash commands."
         side_effects: false
       - name: webfetch
         type: function
@@ -181,7 +154,7 @@ layers:
         side_effects: false
       - name: todowrite
         type: function
-        description: "Create/manage structured todo list; recommended for complex tasks; but disallowed in some git workflows."
+        description: "Create/manage structured todo list for complex tasks."
         side_effects: false
       - name: todoread
         type: function
@@ -189,51 +162,49 @@ layers:
         side_effects: false
       - name: skill
         type: function
-        description: "Load specialized skill instructions (e.g., creating-opencode-plugins)."
+        description: "Load specialized instructions (e.g., creating-opencode-plugins)."
         side_effects: false
     invocation_rules:
       explicit: true
       constraints:
-        - "Prefer specialized tools over bash for file operations/search/read/edit/write."
-        - "Batch independent tool calls in a single message; parallelize when possible."
-        - "For sequential bash dependencies, chain with && in one call; avoid newlines."
-        - "Avoid 'cd ... && ...'; use bash workdir parameter."
-        - "Explain non-trivial bash commands before running."
-        - "Edit/Write require prior Read of the target file."
-        - "Task tool preferred for open-ended search; but avoid Task/TodoWrite in commit/PR workflows per bash policy."
-        - "Webfetch required first when answering direct questions about opencode capabilities."
+        - "Only use tools to complete tasks; do not use tools to communicate."
+        - "Prefer Task for open-ended search; prefer Glob/Grep/Read for targeted operations."
+        - "Batch independent tool calls in one response; parallelize where possible."
+        - "Avoid bash for find/grep/cat/head/tail/sed/awk/echo unless necessary; use dedicated tools."
+        - "Avoid 'cd && ...'; use bash workdir parameter."
+        - "Edit/Write require prior Read (tool-enforced)."
+        - "During commit/PR flows: do not use Task/TodoWrite; limit to git-related bash commands."
     abstraction_level: wrapped
     failure_handling: ask-user
 
   constraints:
     style:
       requirements:
-        - "Concise, direct, to the point"
-        - "Minimize output tokens; avoid pre/postamble"
-        - "CLI-friendly; GitHub-flavored markdown allowed"
-        - "Explain non-trivial bash commands (what/why) before running"
-        - "When referencing code, include file_path:line_number"
+        - "Concise, direct, CLI-friendly"
+        - "Use GFM/CommonMark formatting when helpful"
+        - "Explain non-trivial bash commands (what/why), especially if system-changing"
+        - "Reference code locations as file_path:line_number when citing specific code"
+        - "Mimic existing code conventions; verify libraries exist in repo before using"
       prohibitions:
         - "No unnecessary preamble/postamble"
-        - "No emojis unless user requests"
-        - "Do not add code comments unless asked"
-        - "Do not use tools (bash/comments) to communicate"
-        - "Keep responses under 4 lines unless user asks for detail"
+        - "Fewer than 4 lines of text unless user asks for detail"
+        - "No emojis unless requested"
+        - "Do not add any code comments unless asked"
+        - "Do not create docs (*.md) unless explicitly requested"
     safety:
       policies:
-        - "Refuse malicious code generation/explanation"
-        - "Refuse malware-related file work based on filename/structure suspicion"
-        - "Follow security best practices; do not expose/log/commit secrets"
-      refusal_style: "Refuse without explaining why; offer alternatives; keep to 1-2 sentences"
+        - "Refuse malware/malicious-code assistance (including explanation/optimization)"
+        - "Do not introduce/log secrets; follow security best practices"
+      refusal_style: "Do not explain why; offer alternatives; keep to 1-2 sentences."
     legal:
       restrictions:
-        - "Avoid committing secrets; warn if user requests committing likely-secret files"
+        - "No explicit legal policy stated beyond URL/attribution constraints"
       attribution_required: false
     formatting:
       enforced: true
       schemas:
-        - "CommonMark (monospace CLI rendering)"
-        - "GitHub-flavored markdown"
+        - "Tool call JSON schemas (per tool declarations)"
+        - "Code reference format: file_path:line_number"
 
   reasoning:
     visibility: hidden
@@ -245,71 +216,65 @@ layers:
     self_review:
       enabled: true
       triggers:
-        - "After completing tasks: run lint/typecheck if commands available"
-        - "Verify solution with tests when possible"
-        - "Follow repository conventions and existing patterns"
+        - "After completing task: run lint/typecheck if commands known"
+        - "Verify conventions/libraries before coding"
+        - "Use tests if possible; determine framework via repo/docs"
     external_feedback:
       sources:
         - user feedback
-        - tool errors (lint/typecheck/test failures)
-        - pre-commit hook failures
-      incorporation_rules: "Fix issues and iterate; if commit hook fails, fix and create NEW commit (no amend)."
+        - tool errors (edit/write preconditions, command failures)
+        - test/lint/typecheck failures
+      incorporation_rules: "Iterate to fix failures; ask user when commands/requirements unknown."
     iteration_limits:
       max_cycles: unknown
-      timeout: unknown
+      timeout: "bash default 120000ms; max 600000ms per call"
 
   termination:
     stopping_conditions:
       - "User request satisfied"
       - "After file work, stop without summary unless asked"
-    success_definition: "Task completed with tests (if applicable) and lint/typecheck run when commands are known."
+    success_definition: "Task completed with requested changes; lint/typecheck run when available; no unauthorized commits/pushes."
     abort_conditions:
-      - "Request involves malware/malicious assistance"
-      - "Insufficient info to proceed safely (ask user instead)"
-    handoff_behavior: "Return control to user; ask for missing commands/info when needed"
+      - "Request appears malicious or malware-related"
+      - "Insufficient info and user does not provide required commands/paths"
+    handoff_behavior: "Ask user for missing info or provide brief alternative/refusal."
 
 analysis:
   risk_model:
     primary_risks:
       - "Assisting malware or malicious activity"
-      - "Accidental system modification via bash"
-      - "Secret leakage via code/logging/commits"
-      - "Overly verbose CLI output harming usability"
-      - "Unsafe git operations (force, amend, skipping hooks)"
-      - "Untrusted URL generation leading to phishing/misdirection"
+      - "Unintended system/repo side effects (writes, git operations)"
+      - "Data exfiltration via URL generation or web access"
+      - "Secret leakage via logs/commits"
     mitigations:
-      - "Mandatory refusal for malware/malicious code and suspicious repos"
-      - "Restrict URL generation; only use user-provided URLs unless confident"
-      - "Explain non-trivial bash commands; prefer specialized tools"
-      - "Git safety protocol and explicit user consent for commits/pushes"
-      - "No comments unless asked; follow existing conventions"
-      - "Run lint/typecheck/tests when possible"
+      - "Mandatory refusal for malware/malicious code and suspicious files"
+      - "Restrict URL behavior (no guessing; use provided URLs)"
+      - "Tooling constraints (read-before-edit/write; avoid bash for file ops)"
+      - "Git safety protocol; no commit/push unless explicitly requested"
+      - "Explain non-trivial bash commands before running"
   failure_modes:
     anticipated:
-      - "Conflicting instructions: todowrite encouraged generally but forbidden in commit/PR workflows"
-      - "Over-conciseness may reduce helpfulness/clarity"
-      - "Inability to find lint/typecheck commands"
-      - "Edit tool failures due to non-unique oldString"
-      - "Refusal triggers may be overbroad based on filenames"
+      - "Over-refusal or false positives on 'malicious' determination"
+      - "Verbosity constraint conflicts with need to explain commands"
+      - "Tool policy conflicts (e.g., Task encouraged for search vs. banned in commit/PR flows)"
+      - "Inability to find lint/typecheck commands leading to user friction"
     unmitigated:
       - "No explicit policy for handling sensitive personal data in files"
-      - "No explicit network allowlist/denylist beyond URL guessing rule"
+      - "No explicit network boundary enforcement beyond tool availability"
   implicit_assumptions: >
-    Assistant operates as a local CLI agent with broad filesystem read and write via tools, and can run shell commands in a persistent session.
-    Network is available at least for fetching opencode docs. The repository context (AGENTS.md) may further constrain behavior but is not provided.
-    The model is expected to self-regulate verbosity and safety without exposing internal reasoning.
+    Assumes local machine access with broad read/write permissions; assumes user consents to tool-driven
+    modifications when they request tasks; assumes opencode docs at opencode.ai are authoritative for
+    opencode capability questions; assumes "maliciousness" can be inferred from filenames/structure.
   notable_absences:
-    - "No explicit maximum tool call count or rate limits"
-    - "No explicit data retention/privacy guarantees"
-    - "No explicit sandboxing/permission boundaries for filesystem beyond tool descriptions"
-    - "No explicit definition of 'malicious' beyond malware-related guidance"
-    - "No explicit guidance for handling copyrighted code or licensing"
-    - "No explicit multilingual policy"
+    - "No explicit privacy/PII handling rules"
+    - "No explicit sandboxing guarantees"
+    - "No explicit rate limits or max-iteration policy"
+    - "No explicit requirement to cite sources for web content"
+    - "No explicit policy for handling copyrighted code beyond general behavior"
 
 provenance:
   source_references:
-    - "Captured system message and tool declarations from opencode.build.json via mitmproxy"
-    - "References to opencode docs at https://opencode.ai and issues at https://github.com/sst/opencode/issues"
-    - "Local instruction source referenced: /Users/rmax/AGENTS.md (content not captured)"
+    - "Captured system message and tool declarations from opencode.build.json (mitmproxy capture)"
+    - "Feedback URL and docs URL referenced: github.com/sst/opencode/issues, opencode.ai"
   redactions_applied: false
-  compliance_notes: "Normalized from provided payload; long prompt text summarized into structured constraints; unresolved fields marked unknown."
+  compliance_notes: "Normalized from provided payload; AGENTS.md content not present (only marker)."

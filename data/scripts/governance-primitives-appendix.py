@@ -5,20 +5,21 @@
 # dependencies = ["openai"]
 # ///
 """
-final-research-report.py
+governance-primitives-appendix.py
 
-Generate the final cross-assistant comparative research report from:
-- per-assistant final reports (final-report-*.md)
-- research goal document (goal.md)
+Generate the Appendix: Prompt Governance Primitives from:
+- a finalized research report
+- a Prompt Governance Primitives Registry (JSON)
+- an appendix-generation prompt (Markdown)
 
 Output:
-  final-research-report.md
+  appendix-governance-primitives.md
 
 Usage:
-  uv run --locked data/scripts/final-research-report.py \
-    --prompt data/prompts/final-research-report.prompt.md \
-    --assistants data/final-report-*.md \
-    --goal goal.md \
+  uv run --locked scripts/governance-primitives-appendix.py \
+    --prompt prompts/governance-primitives-appendix.prompt.md \
+    --report final-research-report.md \
+    --registry primitives.registry.json \
     --model gpt-5.2
 
 Options:
@@ -26,10 +27,10 @@ Options:
 """
 
 import argparse
+import json
 import logging
 import sys
 from pathlib import Path
-from typing import List
 
 import openai
 
@@ -42,25 +43,32 @@ def read_text(path: Path) -> str:
         sys.exit(1)
 
 
+def read_json(path: Path) -> dict:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        logging.exception(f"Failed to read JSON {path}")
+        sys.exit(1)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate final comparative research report"
+        description="Generate Appendix: Prompt Governance Primitives"
     )
     parser.add_argument(
         "--prompt",
         required=True,
-        help="Final research report prompt (Markdown)",
+        help="Appendix generation prompt (Markdown)",
     )
     parser.add_argument(
-        "--assistants",
+        "--report",
         required=True,
-        nargs="+",
-        help="Per-assistant final reports (final-report-*.md)",
+        help="Final research report (Markdown)",
     )
     parser.add_argument(
-        "--goal",
+        "--registry",
         required=True,
-        help="Research goal document (goal.md)",
+        help="Prompt Governance Primitives Registry (JSON)",
     )
     parser.add_argument(
         "--model",
@@ -68,12 +76,14 @@ def main() -> None:
         help="Model name (default: gpt-5.2)",
     )
     parser.add_argument(
-        "--seed", type=int, help="Seed for deterministic inference (optional)"
+        "--seed",
+        type=int,
+        help="Seed for deterministic inference (optional)",
     )
     parser.add_argument(
         "--output",
-        default="final-research-report.md",
-        help="Output path (default: final-research-report.md)",
+        default="appendix-governance-primitives.md",
+        help="Output path (default: appendix-governance-primitives.md)",
     )
     parser.add_argument(
         "--dry-run",
@@ -95,15 +105,8 @@ def main() -> None:
     )
 
     prompt_text = read_text(Path(args.prompt))
-    goal_text = read_text(Path(args.goal))
-
-    assistant_paths = [Path(p) for p in args.assistants]
-    assistant_blocks: List[str] = []
-
-    for path in sorted(assistant_paths):
-        assistant_blocks.append(
-            f"## Assistant Report: {path.stem}\n\n{read_text(path)}"
-        )
+    report_text = read_text(Path(args.report))
+    registry_json = read_json(Path(args.registry))
 
     messages = [
         {
@@ -112,16 +115,19 @@ def main() -> None:
         },
         {
             "role": "user",
-            "content": f"""## Research Goals
+            "content": f"""## Final Research Report (Context Only)
 
-{goal_text}
+{report_text}
 """,
         },
         {
             "role": "user",
-            "content": f"""## Per-Assistant Final Reports
+            "content": f"""## Prompt Governance Primitives Registry (Authoritative)
 
-{'\n\n'.join(assistant_blocks)}
+```json
+{json.dumps(registry_json, indent=2, ensure_ascii=False)}
+```
+
 """,
         },
     ]
@@ -137,7 +143,7 @@ def main() -> None:
 
     client = openai.OpenAI()
 
-    logging.info("Calling model to generate final research report...")
+    logging.info("Calling model to generate governance primitives appendix...")
     try:
         response = client.chat.completions.create(
             model=args.model,
@@ -156,7 +162,7 @@ def main() -> None:
     out_path = Path(args.output)
     try:
         out_path.write_text(output.strip(), encoding="utf-8")
-        logging.info(f"Wrote final report to {out_path}")
+        logging.info(f"Wrote appendix to {out_path}")
     except Exception:
         logging.exception("Failed to write output file")
         sys.exit(1)

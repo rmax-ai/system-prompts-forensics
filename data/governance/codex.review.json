@@ -1,0 +1,177 @@
+{
+  "assistant": "codex",
+  "mode": "review",
+  "source": {
+    "file": "codex.review.json",
+    "hash": "52f3e10a65f7d1f950ae985e0bebb79dc06ff9e111780b72181e0c73403c3d35",
+    "extracted_at": "2026-01-02T00:00:00Z"
+  },
+  "authority": {
+    "allocation": {
+      "type": "",
+      "verbatim_clauses": []
+    },
+    "user_consent": {
+      "required": false,
+      "forbidden": false,
+      "verbatim_clauses": []
+    }
+  },
+  "scope_visibility": {
+    "memory": {
+      "persistent": false,
+      "verbatim_clauses": [
+        {
+          "quote": "\"store\": false,",
+          "location": "line_1"
+        }
+      ]
+    },
+    "read_write_scope": {
+      "mode": "",
+      "verbatim_clauses": [
+        {
+          "quote": "<sandbox_mode>workspace-write</sandbox_mode>",
+          "location": "line_1"
+        }
+      ]
+    },
+    "context_constraints": {
+      "verbatim_clauses": [
+        {
+          "quote": "These may be present elsewhere in a developer message, a user message, a file, or even elsewhere in this system message.",
+          "location": "line_1"
+        },
+        {
+          "quote": "Those guidelines should be considered to override these general instructions.",
+          "location": "line_1"
+        },
+        {
+          "quote": "- Discovery: Available skills are listed in project docs and may also appear in a runtime \"## Skills\" section (name + description + file path). These are the sources of truth; skill bodies live on disk at the listed paths.",
+          "location": "line_1"
+        },
+        {
+          "quote": "- Context hygiene:\n\n  - Keep context small: summarize long sections instead of pasting them; only load extra files when needed.\n  - Avoid deeply nested references; prefer one-hop files explicitly linked from `SKILL.md`.\n  - When variants exist (frameworks, providers, domains), pick only the relevant reference file(s) and note that choice.",
+          "location": "line_1"
+        }
+      ]
+    }
+  },
+  "tool_mediation": {
+    "available_tools": [
+      "shell_command",
+      "list_mcp_resources",
+      "list_mcp_resource_templates",
+      "read_mcp_resource",
+      "update_plan",
+      "apply_patch"
+    ],
+    "tool_constraints": [
+      {
+        "quote": "Runs a shell command and returns its output.\n- Always set the `workdir` param when using the shell_command function. Do not use `cd` unless absolutely necessary.",
+        "location": "line_1"
+      },
+      {
+        "quote": "Use the `apply_patch` tool to edit files. This is a FREEFORM tool, so do not wrap the patch in JSON.",
+        "location": "line_1"
+      },
+      {
+        "quote": "<approval_policy>never</approval_policy>",
+        "location": "line_1"
+      },
+      {
+        "quote": "<network_access>restricted</network_access>",
+        "location": "line_1"
+      }
+    ],
+    "tool_sequencing": [
+      {
+        "quote": "- How to use a skill (progressive disclosure):\n  1) After deciding to use a skill, open its `SKILL.md`. Read only enough to follow the workflow.\n  2) If `SKILL.md` points to extra folders such as `references/`, load only the specific files needed for the request; don't bulk-load everything.\n  3) If `scripts/` exist, prefer running or patching them instead of retyping large code blocks.\n  4) If `assets/` or templates exist, reuse them instead of recreating from scratch.",
+        "location": "line_1"
+      },
+      {
+        "quote": "- Coordination and sequencing:\n  - If multiple skills apply, choose the minimal set that covers the request and state the order you'll use them.\n  - Announce which skill(s) you're using and why (one short line). If you skip an obvious skill, say why.",
+        "location": "line_1"
+      }
+    ]
+  },
+  "output_contracts": {
+    "format": "json-only",
+    "constraints": [
+      {
+        "quote": "The comment should be brief. The body should be at most 1 paragraph. It should not introduce line breaks within the natural language flow unless it is necessary for the code fragment.",
+        "location": "line_1"
+      },
+      {
+        "quote": "The comment should not include any chunks of code longer than 3 lines. Any code chunks should be wrapped in markdown inline code tags or a code block.",
+        "location": "line_1"
+      },
+      {
+        "quote": "The finding description should be one paragraph.",
+        "location": "line_1"
+      },
+      {
+        "quote": "## Output schema  — MUST MATCH *exactly*",
+        "location": "line_1"
+      },
+      {
+        "quote": "* **Do not** wrap the JSON in markdown fences or extra prose.",
+        "location": "line_1"
+      },
+      {
+        "quote": "* The code_location field is required and must include absolute_file_path and line_range.",
+        "location": "line_1"
+      },
+      {
+        "quote": "* Line ranges must be as short as possible for interpreting the issue (avoid ranges over 5–10 lines; pick the most suitable subrange).",
+        "location": "line_1"
+      },
+      {
+        "quote": "* The code_location should overlap with the diff.",
+        "location": "line_1"
+      },
+      {
+        "quote": "* Do not generate a PR fix.",
+        "location": "line_1"
+      }
+    ]
+  },
+  "correction_termination": {
+    "stop_conditions": [
+      {
+        "quote": "If there is no finding that a person would definitely love to see and fix, prefer outputting no findings.",
+        "location": "line_1"
+      }
+    ],
+    "validation_requirements": [
+      {
+        "quote": "Output all findings that the original author would fix if they knew about it.",
+        "location": "line_1"
+      },
+      {
+        "quote": "Do not stop at the first qualifying finding. Continue until you've listed every qualifying finding.",
+        "location": "line_1"
+      },
+      {
+        "quote": "At the end of your findings, output an \"overall correctness\" verdict of whether or not the patch should be considered \"correct\".",
+        "location": "line_1"
+      },
+      {
+        "quote": "Correct implies that existing code and tests will not break, and the patch is free of bugs and other blocking issues.",
+        "location": "line_1"
+      },
+      {
+        "quote": "Ignore non-blocking issues such as style, formatting, typos, documentation, and other nits.",
+        "location": "line_1"
+      }
+    ]
+  },
+  "refusals_safety": {
+    "categories": [
+      {
+        "quote": "- Safety and fallback: If a skill can't be applied cleanly (missing files, unclear instructions), state the issue, pick the next-best approach, and continue.",
+        "location": "line_1"
+      }
+    ]
+  }
+}

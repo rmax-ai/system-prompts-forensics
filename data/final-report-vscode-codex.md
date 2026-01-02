@@ -1,172 +1,147 @@
 ## 1. Assistant Overview
 
-The assistant under analysis is **vscode-codex**, a GPT‑5.x–family “Codex” coding agent operating in a local CLI/IDE harness on a user’s computer. Across modes, it is positioned as a **concise, collaborative coding teammate** that can run shell commands, inspect and modify project files, and optionally manage a task plan.
+The assistant under analysis is **vscode-codex**, a local coding agent operating through a Codex CLI/IDE harness and backed by a GPT‑5.x family model. The modes included are:
 
-**Modes included:**
+- **agent-full-access**
+- **agent**
+- **chat**
 
-- `agent-full-access`
-- `agent`
-- `chat`
-
-Overall purpose implied by the constitutions: provide **tool-mediated software engineering assistance** (implementation, debugging, review) with strong operational guardrails around destructive actions, workspace integrity, and scan-friendly reporting.
+Across modes, the assistant’s implied purpose is consistent: provide **concise, tool-mediated coding help** on a user’s machine, including code edits, shell execution, optional planning, and review-oriented feedback when requested.
 
 ## 2. Methodological Note
 
-This report is derived solely from the provided **normalized system-prompt schemas** and a **mode-to-mode structural comparison** of identity, authority, scope, tool mediation, correction, and termination rules.
+This report is derived solely from **normalized system-prompt schemas** and a **structural comparison across modes**. Conclusions are limited to governance, authority, and interaction-contract differences explicitly represented in those normalized analyses.
 
 ## 3. Shared Constitutional Core
 
-Across all modes, the assistant maintains a stable governance nucleus:
+Several governance elements remain invariant across all modes:
 
-- **Stable identity and role**: consistently a “coding agent” with a friendly, concise teammate persona; review behavior is explicitly risk- and correctness-oriented.
-- **Hard safety boundaries around repository integrity**:
-  - destructive git operations are disallowed unless explicitly requested/approved;
-  - commit amendment is disallowed unless explicitly requested;
-  - reverting unrelated/user changes is disallowed;
-  - **unexpected changes trigger a stop-and-ask** behavior (do not proceed without user direction).
-- **Tool-mediated operation**: actions are expected to occur through declared tools (shell execution, patch application, MCP reads, plan updates, image attachment), with explicit invocation constraints (e.g., set `workdir`, avoid `cd`).
-- **Low-leakage, scan-friendly output contract**: avoid dumping large file contents; reference paths; plain-text/CLI-styled formatting conventions; constrained bulleting and file-reference formats.
-- **Non-persistent state**: no memory and no session persistence in all modes.
-- **Self-review and validation expectation**: self-review is enabled everywhere, with validation emphasized before yielding when changes are made or when autonomy is higher.
+- **Identity and role stability:** The assistant is consistently framed as a **coding agent / coding teammate** with a concise, factual, scan-friendly communication style and a review posture that emphasizes correctness and risk identification.
+- **Non-interference with user work:** All modes prohibit reverting unrelated/user-made changes unless explicitly requested, and prohibit amending git commits unless explicitly requested.
+- **Destructive-action restraint:** All modes restrict destructive git/file operations (e.g., `git reset --hard`) unless explicitly requested and/or approved, establishing a stable safety boundary around irreversible actions.
+- **Unexpected-change stop rule:** All modes include a hard stop-and-ask behavior when “unexpected changes” are detected that the agent did not make, functioning as a termination/escalation trigger to protect workspace integrity.
+- **Tool-mediated operation:** All modes rely on the same general tool family (shell execution, patch editing, MCP resource access, optional planning, image attachment) with explicit invocation constraints (e.g., set `workdir`, avoid unnecessary `cd`, prefer targeted patching).
+- **Low persistence:** Memory and session persistence are consistently absent, implying a governance stance that avoids long-lived state accumulation.
 
-This invariant core suggests a foundational design role: a **local, tool-using coding operator** whose primary governance objective is to prevent accidental damage to the user’s working tree while remaining efficient and auditable through structured, minimal output.
+This invariant core suggests a foundational role centered on **local, minimally disruptive software change assistance**, with governance designed to prevent accidental damage to a user’s working directory and to keep authority legible through tool calls and explicit constraints.
 
 ## 4. Mode-by-Mode Governance Analysis
 
 ### Mode: agent
 
 - **Authority and permissions**
-
-  - Permits shell execution and file edits **within sandbox permissions**, with an explicit mechanism to **request escalated permissions** when policy allows.
-  - Escalation is structurally supported (`allowed: true`) and the **user is the final decision-maker**, indicating a consent-gated authority model.
-  - Maintains strict prohibitions on destructive git actions, commit amendment, and reverting unrelated changes; must stop on unexpected changes.
+  - Operates with **sandbox-mediated authority**: can read/write within configured writable roots and run shell commands, but escalation is explicitly supported and governed by an approval policy.
+  - Escalation is **allowed** and the **user is the final decision-maker** for escalated actions, indicating a consent-based authority model.
+  - Includes a distinctive rule for on-request approvals: when a command is blocked and escalation is needed, the agent should request escalation via tool parameters with a brief justification, without pre-messaging the user.
 
 - **Scope and visibility**
-
-  - Inputs include user/environment context, tool outputs, MCP resources (if configured), and optional local images.
-  - Environment is local with **write filesystem access** but **limited network access**, implying a default posture of constrained external interaction.
+  - Sees conversation history, environment context (sandbox mode, network access, approval policy, writable roots), tool schemas, and limited IDE context (open tabs list without contents).
+  - Network access is described as **limited** (mode-level environment), and filesystem access is **write** within sandbox constraints.
 
 - **Interaction contract**
-
-  - Concise, scan-friendly, plain-text output; strong formatting constraints (no nested bullets, no URIs for file refs, no line ranges).
-  - Planning is optional and governed (skip for easy tasks; avoid single-step plans; update after shared sub-tasks).
-  - Review mode is formalized: findings-first, severity-ordered, with file/line references (notably, the formatting layer also restricts line ranges, creating a tension between “line refs” and “no line ranges”).
+  - Strong formatting and concision requirements; findings-first review format when asked for “review.”
+  - Planning is conditional: skip for trivial tasks; if used, must be multi-step and updated after shared sub-tasks.
+  - Frontend-specific stylistic constraints appear (avoid boilerplate, intentional design), indicating domain-specific output governance layered atop general coding assistance.
 
 - **Correction and termination behavior**
-  - Self-review triggers before yielding after code changes and after plan sub-tasks; rerun with approval if sandbox blocks important commands (when allowed).
-  - Termination includes explicit “blocked by required approval” stopping conditions; handoff emphasizes asking for direction/approval or returning control with next steps.
+  - Self-review is enabled with triggers tied to substantial work and sandbox failures.
+  - Termination includes waiting states when blocked by required approval, and a stop-and-ask requirement on unexpected changes.
+  - The mode anticipates sandbox failures and channels them into an escalation workflow rather than silent workarounds.
 
 ### Mode: agent-full-access
 
 - **Authority and permissions**
-
-  - Broadest operational authority: shell commands, read/write files, MCP reads, image attachment, and plan updates.
-  - **Escalation is disabled** (`allowed: false`) and the **final decision-maker is “policy”**, not the user—consistent with a configuration where approvals are not part of the runtime contract.
-  - A distinctive constraint: **must not ask for approvals** when `approval_policy=never`, paired with an expectation to “persist and work around constraints” and finish/validate before yielding.
-  - Still retains the same hard prohibitions on destructive git actions and commit amendment unless explicitly requested, and the same stop-on-unexpected-changes rule.
+  - Authority is maximized: can read and edit files **including outside the workspace** due to full access, run shell commands, and use MCP resources.
+  - Escalation is explicitly **disallowed**, and the **model is the final decision-maker**, shifting authority from user-mediated consent to agent autonomy within the mode’s constraints.
+  - A key conditional governance inversion appears: when `approval_policy == never`, the agent must not request approvals and must proceed (or work around constraints), including permission to add temporary validation artifacts that must be removed before yielding.
 
 - **Scope and visibility**
-
-  - Local execution with **full network access** and **filesystem write access**, increasing operational reach.
-  - Inputs explicitly include system/developer instructions in payload and IDE open-tabs metadata, suggesting slightly broader contextual visibility than other modes.
+  - Similar input visibility to other modes (user messages, open tabs list, tool outputs), but paired with **full network access** and **write filesystem access**.
+  - The combination of full filesystem reach and full network access materially expands operational scope and risk surface.
 
 - **Interaction contract**
-
-  - Similar scan-friendly formatting and “reference paths, don’t dump files” discipline.
-  - Adds a review-specific ordering rule: findings must precede any overview; and a stronger “do not ask for approvals” constraint that shifts responsibility to internal policy compliance rather than user-mediated consent.
+  - Maintains the same concision and scan-friendly formatting regime, with additional strictness around not dumping large file contents and path-based referencing.
+  - Planning remains optional for straightforward tasks, but if used must be multi-step and actively maintained.
 
 - **Correction and termination behavior**
-  - Self-review is emphasized “before yielding in approval_policy=never mode (validate work).”
-  - Abort condition is explicit: if approval would be required but is disallowed and no workaround exists, the agent must abort.
-  - Handoff returns control with verification guidance rather than seeking approvals.
+  - Self-review triggers are explicit (validate before yielding; update plan after sub-tasks; respond to tool failures).
+  - Termination logic includes a hard abort on unexpected changes (stop and ask user), even though escalation is not available—this functions as a compensating control for high authority.
+  - The mode forbids proceeding silently after unexpected changes, emphasizing workspace integrity as a primary termination trigger.
 
 ### Mode: chat
 
 - **Authority and permissions**
-
-  - Similar to `agent` in structure: tool-mediated shell and patch editing, MCP access, and optional planning.
-  - Escalation is supported and **user is final decision-maker**, but the captured environment context indicates **`sandbox_mode=read-only`** and **`approval_policy=on-request`**, making write authority conditional on approval.
-  - Maintains the same prohibitions: no destructive git actions without explicit request/approval; no commit amendment unless requested; stop on unexpected changes.
+  - Authority is comparatively constrained by an explicitly inferred active environment: **read-only sandbox mode**, **restricted network**, and **on-request approvals**.
+  - Escalation is allowed (to user/tool), and the **user is the final decision-maker** for escalations and destructive actions.
+  - Conditional permissions are more granular than in agent mode: separate conditions for read-only sandbox, restricted network, and destructive actions with explicit request/approval.
 
 - **Scope and visibility**
-
-  - Local execution with **filesystem access effectively read-only** (as derived from environment context) and **restricted network**.
-  - Inputs include a “single instructions string” plus environment context, tool schemas, and tool outputs—suggesting a more compact instruction surface than the agent payloads, but still within the same governance family.
+  - Similar visibility set (system instructions, user messages including environment context, tool schemas, open tabs list, placeholder AGENTS content).
+  - Environment is explicitly **filesystem read** (active), with limited network access and an approval mechanism to expand scope.
 
 - **Interaction contract**
-
-  - Plain-text, scan-friendly output with strict formatting prohibitions (no nested bullets, no URIs, no line ranges).
-  - For code changes, the contract specifies a “quick explanation” first, then context; review mode remains findings-first and severity-ordered.
-  - Refusal style is under-specified (“unknown”), indicating less explicit guidance for handling disallowed requests compared to the agent variants.
+  - Strongest emphasis on CLI-oriented formatting discipline: plain text, scannable structure, strict file reference conventions, and findings-first review structure.
+  - Explicit refusal/workaround posture: work around constraints where possible; request approval when necessary (unless approvals are disallowed by policy).
 
 - **Correction and termination behavior**
-  - Self-review includes plan updates and validation guidance; if commands/tests cannot be run, provide verification steps.
-  - Termination includes waiting for user response when approvals are required; handoff behavior is explicitly to ask the user.
+  - Self-review triggers include plan updates and pre-yield validation in never-approval contexts (even if not active here), plus stop-and-ask on unexpected changes.
+  - Termination includes being blocked by required approval (and user denial), and aborting when destructive action is required without explicit request/approval.
+  - The mode’s correction loop is tightly coupled to sandbox failures and approval gating.
 
 ## 5. Comparative Mode Analysis
 
-- **Most permissive vs most constrained**
+A clear governance gradient emerges:
 
-  - **Most permissive operationally**: `agent-full-access` (full network, write access, no escalation workflow, policy-driven autonomy).
-  - **Most constrained**: `chat` in the captured configuration (read-only sandbox + restricted network + approvals required for non-read actions).
-  - `agent` sits between: write access is available, network is limited, and escalation is available with user consent.
+- **Most permissive:** **agent-full-access**
+  - Full filesystem reach (including outside workspace) and full network access.
+  - No escalation pathway; the model holds final authority, constrained primarily by prohibitions on destructive actions and non-interference rules.
+  - Designed for autonomous execution under a “no approvals” contract.
 
-- **Authority expansion and conditionality**
+- **Intermediate:** **agent**
+  - Write access within sandbox constraints and limited network.
+  - Escalation is available and user-mediated; authority expands conditionally via approvals.
+  - Balances agent initiative with explicit consent gates.
 
-  - The key governance gradient is **consent-gated authority**:
-    - `agent-full-access` removes user-mediated escalation and instead enforces “do not ask for approvals,” shifting control to policy constraints and stop conditions.
-    - `agent` and `chat` preserve a **user-as-final-authority** model via approval-based escalation.
-  - A second gradient is **environmental reach**:
-    - network: restricted/limited (`agent`, `chat`) → full (`agent-full-access`)
-    - filesystem: read-only (`chat` as captured) → write (`agent`, `agent-full-access`)
+- **Most constrained:** **chat**
+  - Active read-only filesystem and restricted network, with on-request escalation.
+  - Authority is primarily advisory unless the user grants escalations; destructive actions require explicit request/approval.
+  - The interaction contract is the most explicit about conditional permissions and refusal/workaround behavior.
 
-- **Visibility and instruction surface**
-
-  - `agent-full-access` explicitly includes system/developer instructions and IDE open-tabs metadata in visible inputs, implying a slightly broader operational context.
-  - `chat` appears to have a more compact instruction representation, though tool schemas and environment context remain visible.
-
-- **Correction/termination differences**
-  - All modes share stop-on-unexpected-changes, but the **reason for stopping** differs:
-    - `chat`/`agent`: often stop to obtain approval or direction.
-    - `agent-full-access`: stop primarily when unexpected changes appear or when blocked by a constraint that cannot be worked around (since approvals cannot be requested).
+Across modes, authority expands or narrows primarily through (a) **filesystem scope**, (b) **network scope**, and (c) whether escalation is **available and user-governed** versus **disabled and agent-governed**.
 
 ## 6. Design Patterns and Intent
 
-Several recurring governance strategies emerge:
+Several recurring governance strategies appear:
 
-- **Workspace-integrity primacy**: prohibitions against destructive git actions, commit amendment, and reverting unrelated changes are invariant, indicating a design intent to protect the user’s working state as the top operational safety objective.
-- **Tool mediation with explicit invocation discipline**: requiring explicit tool calls, `workdir` specification, and discouraging `cd` suggests an intent to make actions **auditable and reproducible** within the harness.
-- **Consent as a mode-dependent control plane**:
-  - In `agent`/`chat`, risk is managed through **user-mediated escalation** (approvals with justification).
-  - In `agent-full-access`, risk is managed through **policy-only constraints plus validation**, reflecting a design that supports autonomous execution when approvals are structurally unavailable.
-- **Structured minimalism in outputs**: strict formatting and “no large dumps” rules function as governance to reduce accidental disclosure and improve operator oversight, even though explicit privacy rules are largely absent.
-- **Termination as governance**: “stop and ask” on unexpected changes is a consistent circuit breaker; in full-access mode, abort conditions replace approval requests as the primary fail-safe.
+- **Workspace-integrity primacy:** The consistent prohibition on reverting unrelated changes and the stop-on-unexpected-changes rule indicate a design intent to treat the user’s working directory as a protected asset, regardless of mode.
+- **Consent as a configurable control plane:** In agent and chat modes, escalation and approvals operationalize user consent as a first-class governance mechanism; in full-access mode, consent is replaced by strict prohibitions and stop conditions.
+- **Tool mediation as accountability:** Explicit tool invocation rules (workdir requirements, patch preference, planning constraints) function as procedural governance—limiting how authority is exercised rather than merely what outcomes are allowed.
+- **Conditional governance rather than static rules:** The constitutions encode behavior switches based on approval policy, sandbox mode, network restriction, and user intent (“review”), suggesting a design philosophy that treats context as determinative for authority.
+- **Output governance as risk management:** Strict formatting, concision, and “do not dump large files” constraints reduce accidental disclosure and operational confusion, even though explicit privacy rules are notably absent.
 
-Overall, mode differentiation appears to manage **risk and responsibility allocation**: either to the user (approval-gated modes) or to the policy harness (no-approval full-access mode), while keeping the same core safety invariants.
+Overall, mode differentiation appears to manage **risk and responsibility allocation**: constrained modes allocate decision authority to the user via approvals; full-access mode allocates authority to the agent while strengthening termination triggers and non-destructive constraints.
 
 ## 7. Implications
 
 - **For users**
-
-  - Users should expect consistent protection against destructive repository operations across modes, but different expectations about consent: `agent`/`chat` will seek approvals (when allowed), while `agent-full-access` will not and instead may proceed autonomously within policy limits or abort when blocked.
-  - In read-only chat configurations, users should anticipate more “verification steps” and approval prompts for writes.
+  - Users should expect materially different control dynamics: chat/agent modes preserve user authority through approvals, while full-access mode shifts control to the agent and relies on prohibitions and stop rules for safety.
+  - The consistent stop-on-unexpected-changes behavior can interrupt workflows but serves as a predictable safeguard for workspace integrity.
 
 - **For developers**
-
-  - The constitutions suggest a deliberate separation between **capability** (tools available) and **governance** (sandbox, approvals, escalation rules). Mode selection effectively chooses a responsibility model: user-in-the-loop vs policy-autonomous.
-  - Strict formatting and file-reference rules indicate an emphasis on downstream rendering/consumption constraints (CLI/IDE), which developers must preserve to maintain governance guarantees.
+  - The governance design suggests that safe operation depends heavily on **sandbox configuration and approval policy**; mode selection effectively determines whether consent is enforced procedurally (approvals) or replaced by behavioral constraints.
+  - Tooling constraints (patch preference, planning rules, command execution discipline) are central to maintaining predictable behavior across environments.
 
 - **For researchers studying agentic systems**
-  - This assistant exemplifies a governance pattern where **agent autonomy is not merely tool access**, but a combination of (a) escalation availability, (b) approval policy, and (c) termination triggers.
-  - The “stop on unexpected changes” rule functions as a robust, mode-invariant interrupt mechanism—an important design element for local agents operating in mutable workspaces.
+  - This assistant provides a clear example of **authority partitioning by mode**: autonomy increases with access breadth and decreases with stronger consent gating.
+  - The constitutions illustrate how “termination logic” (stop-and-ask on unexpected changes) can serve as a compensating control when escalation is unavailable.
 
 ## 8. Limitations
 
-- Prompt-level analysis cannot confirm actual enforcement by the harness (e.g., whether sandboxing truly prevents writes or network calls).
-- Several areas are under-specified across modes: explicit privacy/secret handling, data exfiltration constraints, and concrete definitions of “read” commands in sandbox contexts.
-- Some internal tensions exist in the normalized rules (e.g., “file/line references” vs “no line ranges”), but the schemas do not resolve how conflicts are adjudicated at runtime.
-- No conclusions can be drawn about real-world behavior, reliability, or compliance beyond what the constitutions specify.
+- The analysis cannot determine how reliably “unexpected changes” are detected, as the detection mechanism is not specified.
+- No conclusions can be drawn about actual runtime enforcement beyond what the normalized prompt structures describe (e.g., whether network restrictions are technically enforced or merely instructed).
+- Privacy, secrets handling, and data minimization are under-specified; absence in the prompt analysis does not prove absence in other system layers.
+- Iteration limits, timeouts, and refusal styles are not fully defined, limiting conclusions about boundedness and termination under prolonged failure.
 
 ## 9. Conclusion
 
-vscode-codex uses modes as distinct governance variants that preserve a stable core identity—local coding agent, tool-mediated operation, and strong workspace-integrity safeguards—while varying **who authorizes risky actions** and **how far the agent can reach** (network/filesystem). The design philosophy is consistent: protect the user’s repository state through invariant prohibitions and a universal “stop-and-ask” circuit breaker, then modulate autonomy via sandbox/approval mechanics—either user-consent–driven (`agent`, `chat`) or policy-autonomous with validation and abort logic (`agent-full-access`).
+vscode-codex maintains a stable constitutional core centered on being a concise local coding teammate that protects user workspace integrity and avoids destructive or unsolicited reversions. Modes primarily vary governance by reallocating authority: **chat** and **agent** implement consent-driven escalation under sandbox constraints with the user as final arbiter, while **agent-full-access** removes escalation and expands operational scope (filesystem and network), compensating with stricter non-interference and stop conditions. This reveals a design philosophy that treats “mode” as a governance contract: a deliberate reconfiguration of autonomy, consent, and risk controls rather than a superficial interface change.

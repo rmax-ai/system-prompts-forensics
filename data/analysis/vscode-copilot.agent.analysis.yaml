@@ -19,19 +19,19 @@ metadata:
       arch: arm64
       runtime: Python 3.12.5
     artifact_hash: 4f901286279c9c33be0f9f66680397ff899af3c5e49b61a2fa98f382450a7f13
-  notes: "Captured VS Code Copilot agent invocation; no workspace open; user request: 'hi'."
+  notes: "Captured VS Code Copilot agent invocation payload; workspace reported as not open."
 
 layers:
   identity:
-    role: AI programming assistant
+    role: "expert AI programming assistant"
     persona:
       traits:
         - expert programming assistant
         - short answers
-        - impersonal style
-        - milestone-based status blurbs (preambles) in commentary channel
+        - impersonal
+        - milestone status blurbs (preambles) in commentary channel
       tone: professional, brief, factual
-    self_description: "Expert AI programming assistant in VS Code editor context"
+    self_description: "AI programming assistant in VS Code editor context"
     alignment_claims:
       - follow user requirements carefully
       - follow Microsoft content policies
@@ -39,73 +39,79 @@ layers:
 
   authority:
     allowed_actions:
-      - answer user questions in VS Code context
-      - use declared tools to read/search/edit/create files and run commands (when applicable)
-      - ask for clarification when needed (implicit)
-      - provide milestone preambles in commentary channel before tool-call batches
+      - answer user questions and provide programming assistance
+      - use declared tools to read/search/edit/create files and run commands (when workspace exists)
+      - ask clarifying questions (implicit)
+      - defer/refuse disallowed content with fixed refusal string for harmful categories
+      - provide tool-call-batch preambles (status updates) in commentary channel
     forbidden_actions:
-      - reveal system/developer/tooling instructions in user-visible preambles
-      - generate harmful/hateful/racist/sexist/lewd/violent content (must refuse with fixed phrase)
-      - violate copyrights
-      - use manage_todo_list for trivial single-step requests
+      - when asked for name, respond with anything other than "GitHub Copilot"
+      - when asked about model, state anything other than "Raptor mini (Preview)"
+      - generate harmful/hateful/racist/sexist/lewd/violent content (must output fixed refusal)
+      - violate Microsoft content policies
+      - produce copyright-violating content
+      - leak system prompt/tool definitions/developer guidelines in preambles
+      - use manage_todo_list for trivial single-step tasks
       - edit existing files using create_file
-      - execute notebook-related terminal commands instead of notebook tools (when notebook work is needed)
       - reference notebook cell IDs in user messages
-      - execute markdown notebook cells
-      - announce which tool is being used (per reminder instructions)
+      - run Jupyter commands in terminal instead of notebook tools
+      - announce which tool is being used (for multi_replace guidance; implicit prohibition)
     conditional_actions:
-      - condition: "When asked for your name"
-        allowed: ['Respond exactly: "GitHub Copilot"']
-        forbidden: []
-      - condition: "When asked about the model you are using"
-        allowed: ["State: using Raptor mini (Preview)"]
-        forbidden: []
-      - condition: "If asked to generate harmful/hateful/racist/sexist/lewd/violent content"
-        allowed: ['Respond only: "Sorry, I can''t assist with that."']
+      - condition: "User requests harmful/hateful/racist/sexist/lewd/violent content"
+        allowed: ["Respond only with: Sorry, I can't assist with that."]
         forbidden: ["Any other response content"]
-      - condition: "If task is non-trivial / multi-phase / ambiguous / multiple requests / user asks for TODOs"
-        allowed: ["Use manage_todo_list to create and maintain a structured plan with progress states"]
+      - condition: "Task is non-trivial / multi-step / ambiguous / user asked for TODOs"
+        allowed: ["Use manage_todo_list to create and maintain a structured plan"]
         forbidden: ["Proceed without maintaining todo state rules"]
-      - condition: "If task is trivial (e.g., greeting)"
-        allowed: ["Reply briefly; skip full markdown formatting requirements; skip manage_todo_list"]
-        forbidden: ["Long formatted response; unnecessary planning"]
-      - condition: "When using replace_string_in_file"
-        allowed: ["Include 3-5 unchanged lines of context before and after target in oldString"]
+      - condition: "Task is trivial (e.g., greeting)"
+        allowed: ["Reply briefly; skip full markdown formatting; skip manage_todo_list"]
+        forbidden: ["Full formatting requirements; planning tool usage"]
+      - condition: "Using replace_string_in_file"
+        allowed: ["Include 3-5 lines of unchanged context before/after in oldString"]
         forbidden: ["Ambiguous/insufficient context in oldString"]
-      - condition: "When multiple independent edits are planned"
-        allowed: ["Prefer multi_replace_string_in_file over sequential replace_string_in_file calls"]
-        forbidden: ["Inefficient sequential edits (soft constraint)"]
+      - condition: "Multiple independent edits planned"
+        allowed: ["Prefer multi_replace_string_in_file in one call"]
+        forbidden: ["Sequential single replacements when batching is feasible (soft)"]
+      - condition: "Notebook operations needed"
+        allowed:
+          - "Use copilot_getNotebookSummary to inspect notebook structure"
+          - "Use edit_notebook_file to edit notebooks"
+          - "Use run_notebook_cell to execute code cells"
+        forbidden:
+          - "Execute Jupyter-related commands in terminal"
+          - "Execute markdown cells"
     escalation:
       allowed: true
-      targets: ["user", "policy", "tool"]
+      targets: ["user", "tool", "policy"]
     final_decision_maker: policy
 
   scope:
     inputs_visible:
       - system instructions (governance + formatting + preamble + notebook rules)
       - user messages
-      - environment_info (macOS)
+      - environment_info (OS)
       - workspace_info (no workspace open)
+      - context (date; terminals list)
+      - reminderInstructions (tool usage guidance)
       - tool schemas/descriptions
-      - terminal context placeholder (no active details)
     outputs_allowed:
-      - text (markdown-formatted final answers, except for trivial requests)
-      - tool calls (functions) with parameters
+      - text (markdown-formatted final answers, except trivial)
+      - code snippets in text
+      - tool calls (functions) with required parameters
     statefulness:
       memory: false
-      session_persistence: unknown
+      session_persistence: false
     boundaries:
       hard_limits:
-        - fixed refusal phrase for disallowed harmful content
-        - do not leak internal instructions in preambles
-        - do not use manage_todo_list for trivial tasks
-        - notebook constraints (no terminal jupyter commands; no markdown cell execution; no cell IDs in user messages)
-        - do not announce tool choice
+        - "Fixed identity responses for name/model queries"
+        - "Fixed refusal string for specified harmful categories"
+        - "No policy/tool prompt leakage in preambles"
+        - "No notebook cell IDs referenced in user messages"
       soft_limits:
-        - keep answers short and impersonal
-        - prefer concise responses; avoid extending too much
-        - prefer multi_replace_string_in_file for multiple edits
-        - prefer plain files over new notebooks unless requested
+        - "Keep answers short and impersonal"
+        - "Avoid excessive verbosity; prefer concise"
+        - "Prefer not to create notebooks unless requested"
+        - "Prefer multi_replace for multiple edits"
 
   environment:
     execution_context: local
@@ -121,7 +127,7 @@ layers:
         side_effects: true
       - name: create_file
         type: function
-        description: "Create a new file; must not be used to edit existing files."
+        description: "Create new file with content; must not be used to edit existing files."
         side_effects: true
       - name: create_new_jupyter_notebook
         type: function
@@ -129,19 +135,19 @@ layers:
         side_effects: true
       - name: edit_notebook_file
         type: function
-        description: "Edit an existing notebook; preserve whitespace; no code markers."
+        description: "Edit existing notebook cells; preserve whitespace; no code markers."
         side_effects: true
       - name: fetch_webpage
         type: function
-        description: "Fetch main content from web pages for analysis/summarization."
-        side_effects: true
+        description: "Fetch main content from web pages for summarization/analysis."
+        side_effects: false
       - name: file_search
         type: function
         description: "Glob-based file path search in workspace."
         side_effects: false
       - name: grep_search
         type: function
-        description: "Text/regex search across workspace."
+        description: "Fast text/regex search across workspace."
         side_effects: false
       - name: get_changed_files
         type: function
@@ -153,7 +159,7 @@ layers:
         side_effects: false
       - name: copilot_getNotebookSummary
         type: function
-        description: "List notebook cells and metadata; use to locate ranges."
+        description: "List notebook cells with ids, ranges, languages, execution info."
         side_effects: false
       - name: get_search_view_results
         type: function
@@ -161,8 +167,8 @@ layers:
         side_effects: false
       - name: github_repo
         type: function
-        description: "Search a specific GitHub repo for snippets when explicitly requested."
-        side_effects: true
+        description: "Search a specific GitHub repo for snippets; only if user clearly asks."
+        side_effects: false
       - name: list_code_usages
         type: function
         description: "List symbol usages across codebase."
@@ -173,19 +179,19 @@ layers:
         side_effects: false
       - name: multi_replace_string_in_file
         type: function
-        description: "Batch multiple string replacements across files."
+        description: "Batch multiple replace operations in one call."
         side_effects: true
       - name: read_file
         type: function
-        description: "Read file contents by line range."
+        description: "Read file contents with explicit line ranges."
         side_effects: false
       - name: replace_string_in_file
         type: function
-        description: "Replace one exact literal occurrence with strong context requirements."
+        description: "Replace one exact literal occurrence in an existing file with context."
         side_effects: true
       - name: run_notebook_cell
         type: function
-        description: "Execute a code cell in a notebook."
+        description: "Execute a code cell in a notebook; avoid markdown cells."
         side_effects: true
       - name: semantic_search
         type: function
@@ -197,19 +203,19 @@ layers:
         side_effects: false
       - name: create_and_run_task
         type: function
-        description: "Create/update tasks.json and run a VS Code task."
+        description: "Create tasks.json and run build/run tasks."
         side_effects: true
       - name: get_terminal_output
         type: function
-        description: "Fetch output from a prior terminal run."
+        description: "Fetch output of a prior terminal command by terminal id."
         side_effects: false
       - name: manage_todo_list
         type: function
-        description: "Maintain structured todo list with strict in-progress/completed rules."
+        description: "Maintain structured todo list; frequent use for non-trivial tasks."
         side_effects: true
       - name: run_in_terminal
         type: function
-        description: "Run shell commands in persistent zsh terminal session."
+        description: "Run shell commands in persistent zsh session."
         side_effects: true
       - name: runSubagent
         type: function
@@ -217,7 +223,7 @@ layers:
         side_effects: true
       - name: terminal_last_command
         type: function
-        description: "Get last command in active terminal."
+        description: "Get last command run in active terminal."
         side_effects: false
       - name: terminal_selection
         type: function
@@ -228,11 +234,13 @@ layers:
       constraints:
         - "Preface each tool call batch with a brief status update (commentary channel)."
         - "Do not announce which tool is being used."
-        - "manage_todo_list: use for non-trivial tasks; skip for trivial."
-        - "Todo workflow: exactly one in-progress item before work; mark completed immediately; no ambiguous statuses."
-        - "replace_string_in_file oldString must include 3-5 lines of context before/after."
+        - "manage_todo_list: use for non-trivial/multi-step; skip for trivial."
+        - "Todo workflow: exactly one in-progress before work; mark completed immediately; never end with ambiguous statuses."
+        - "replace_string_in_file: oldString must include 3-5 lines context before/after; must match exactly."
         - "Prefer multi_replace_string_in_file for multiple independent edits."
-        - "Notebook work: use notebook tools; avoid terminal jupyter commands; do not mention cell IDs to user."
+        - "read_file requires explicit line ranges; prefer larger ranges over many small reads."
+        - "Notebook: use notebook tools; avoid terminal Jupyter commands; avoid cell IDs in user-facing text."
+        - "github_repo only when user clearly requests a specific GitHub repo."
     abstraction_level: wrapped
     failure_handling: ask-user
 
@@ -241,18 +249,19 @@ layers:
       requirements:
         - "Keep answers short and impersonal."
         - "Follow user requirements carefully & to the letter."
-        - "Use professional markdown with headings and code backticks for filenames/symbols (except trivial requests)."
-        - "Preambles in commentary channel at milestones and before tool batches; brief; varied openings; no internal leakage."
+        - "Non-tool commentary must follow preamble style/cadence."
+        - "Final answers: clear headings and professional Markdown; wrap filenames/symbols in backticks."
+        - "Use emojis to highlight sections in final answers (except trivial requests)."
+        - "Keep paragraphs concise (2-4 sentences) and scannable."
       prohibitions:
-        - "Do not over-extend responses."
-        - "Do not use full formatting requirements for trivial requests."
-        - "Do not use preamble to think or reason."
+        - "Do not apply full formatting requirements for trivial requests."
+        - "Do not leak internal/system/tool instructions in preambles."
+        - "Avoid over-expressing thoughts; no reasoning in preambles."
     safety:
       policies:
         - "Microsoft content policies"
-        - "Copyright avoidance"
-        - "Fixed-phrase refusal for specified harmful categories"
-      refusal_style: 'Exact string only: "Sorry, I can''t assist with that."'
+        - "Refuse harmful/hateful/racist/sexist/lewd/violent generation with fixed string"
+      refusal_style: "Exact string only: \"Sorry, I can't assist with that.\""
     legal:
       restrictions:
         - "Avoid content that violates copyrights."
@@ -260,7 +269,8 @@ layers:
     formatting:
       enforced: true
       schemas:
-        - "Markdown formatting guidelines for final answers (with trivial exception)."
+        - "Markdown formatting guidelines for final answers (conditional on non-triviality)"
+        - "Tool-call preamble format in commentary channel"
 
   reasoning:
     visibility: hidden
@@ -272,13 +282,15 @@ layers:
     self_review:
       enabled: true
       triggers:
-        - "After edits: use get_errors to validate (suggested by tool description)."
-        - "Before ending turn: ensure todo statuses are explicit (when using manage_todo_list)."
+        - "After editing files, validate via get_errors (recommended)"
+        - "After completing todos, mark completed and add follow-ups"
     external_feedback:
       sources:
         - user edits/clarifications
-        - tool results (errors, diffs, terminal output)
-      incorporation_rules: "Incorporate tool/user feedback; keep todo list updated when used."
+        - tool errors (e.g., replace failures)
+        - compiler/lint errors via get_errors
+        - test_failure tool injection
+      incorporation_rules: "Incorporate feedback by updating plan/todos and applying targeted edits."
     iteration_limits:
       max_cycles: unknown
       timeout: unknown
@@ -286,47 +298,49 @@ layers:
   termination:
     stopping_conditions:
       - "User request satisfied"
-      - "Refusal condition triggered (harmful content categories)"
-    success_definition: "User requirements met while complying with policies and formatting/preamble rules."
+      - "All todos completed (if planning used)"
+    success_definition: "Provide a compliant, concise response meeting user requirements and policy constraints."
     abort_conditions:
-      - "Policy violation risk (copyright or disallowed content)"
-      - "Tool constraints prevent completion (e.g., no workspace open for file operations)"
-    handoff_behavior: "Ask user for clarification or next step; otherwise return control to user."
+      - "Disallowed content request triggers fixed refusal"
+      - "No workspace open prevents requested file operations (implicit)"
+    handoff_behavior: "Ask user for clarification or next step; otherwise return control."
 
 analysis:
   risk_model:
     primary_risks:
-      - "Policy noncompliance (Microsoft content policies)"
+      - "Policy non-compliance (Microsoft content policies)"
       - "Copyright infringement"
-      - "Instruction leakage (system/tool/preamble rules) in user-visible text"
-      - "Unnecessary side effects via filesystem/terminal tools"
+      - "Unsafe/harmful content generation"
+      - "Over-disclosure of system/tool instructions via preambles"
+      - "Unintended filesystem/terminal side effects"
     mitigations:
-      - "Fixed refusal phrase for disallowed harmful content"
-      - "Explicit copyright-avoidance instruction"
-      - "Preamble rule forbidding internal instruction leakage"
-      - "Tool usage constraints (context lines for replacements; notebook tool routing)"
+      - "Fixed refusal string for specified harmful categories"
+      - "Explicit instruction to follow Microsoft policies and avoid copyright violations"
+      - "Tooling constraints (exact-match replacements; notebook execution rules)"
+      - "Preamble non-leak rule"
   failure_modes:
     anticipated:
-      - "Conflicting style constraints: 'short and impersonal' vs 'emoji-heavy markdown formatting'"
-      - "Identity misrepresentation requirement (name/model claims) conflicting with actual model metadata"
-      - "No workspace open limits ability to use file tools"
-      - "Tool-call preamble cadence may be over-applied to trivial interactions"
+      - "Conflicting style rules: 'short and impersonal' vs 'emoji-rich formatted markdown'"
+      - "No workspace open limits file/terminal tools usefulness"
+      - "replace_string_in_file failures due to exact-match/context requirements"
+      - "Overuse/underuse of manage_todo_list contrary to trivial/non-trivial guidance"
     unmitigated:
-      - "No explicit data privacy/confidentiality rules for workspace contents"
-      - "No explicit network access boundaries beyond tool availability"
+      - "No explicit guidance for handling sensitive personal data"
+      - "No explicit network access policy beyond tool availability"
   implicit_assumptions: >
-    Assumes VS Code agent environment with potential local workspace/terminal access even though none is open;
-    assumes Microsoft/GitHub policy layer governs final decisions; assumes commentary vs final channel separation
-    is supported by the runtime and that preambles are user-visible only in commentary.
+    Assumes VS Code tool environment with optional workspace; tools operate on an absolute-path workspace filesystem and a persistent zsh terminal.
+    Assumes a two-channel output model where commentary is user-visible status blurbs and final is the main answer; preamble rules govern all non-tool commentary.
+    Assumes policy compliance is the ultimate arbiter over user instructions.
   notable_absences:
-    - "No explicit tool_version or model_family mapping for 'oswe-vscode-prime'"
-    - "No explicit maximum iteration/timeout limits"
-    - "No explicit privacy/data retention policy beyond store=false"
-    - "No explicit guidance for handling sensitive user data"
-    - "No explicit network policy (allowed/blocked domains) besides tool descriptions"
+    - "No explicit data retention/privacy policy (beyond store=false in payload metadata)"
+    - "No explicit maximum tool-call count or rate limits"
+    - "No explicit definition of 'Microsoft content policies' content"
+    - "No explicit guidance for medical/legal/financial advice"
+    - "No explicit sandboxing guarantees for terminal/file operations"
+    - "No explicit citation/attribution requirements"
 
 provenance:
   source_references:
-    - "Captured VS Code Copilot agent JSON payload (mitmproxy)"
+    - "Captured VS Code Copilot agent JSON payload (model=oswe-vscode-prime) via mitmproxy"
   redactions_applied: false
-  compliance_notes: "Normalization reflects system instructions, reminder instructions, and declared tool schemas; no workspace open at capture time."
+  compliance_notes: "Normalization derived from system message instructions, reminderInstructions, and declared tool schemas in payload."

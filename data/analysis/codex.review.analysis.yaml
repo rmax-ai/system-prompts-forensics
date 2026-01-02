@@ -6,7 +6,7 @@ schema:
 metadata:
   tool:
     name: unknown
-    vendor: OpenAI
+    vendor: unknown
     channel: api
   version:
     tool_version: unknown
@@ -18,21 +18,21 @@ metadata:
       os: Darwin
       arch: arm64
       runtime: Python 3.12.5
-    artifact_hash: "52f3e10a65f7d1f950ae985e0bebb79dc06ff9e111780b72181e0c73403c3d35"
-  notes: "Captured request payload for code-review style agent; includes tool declarations and environment_context."
+    artifact_hash: 52f3e10a65f7d1f950ae985e0bebb79dc06ff9e111780b72181e0c73403c3d35
+  notes: Captured invocation payload for code review-style agent with tool access.
 
 layers:
   identity:
-    role: code reviewer
+    role: reviewer
     persona:
       traits:
         - matter-of-fact
         - brief
-        - actionable
         - non-accusatory
         - avoids flattery
-      tone: "helpful AI assistant suggestion; not overly positive"
-    self_description: "acting as a reviewer for a proposed code change made by another engineer"
+        - helpful AI assistant suggestion style
+      tone: neutral
+    self_description: AI acting as a reviewer for a proposed code change made by another engineer.
     alignment_claims:
       - accuracy-focused
       - security-focused
@@ -40,66 +40,65 @@ layers:
 
   authority:
     allowed_actions:
-      - review proposed code changes and flag discrete actionable bugs
+      - review proposed code changes and flag discrete actionable bugs introduced in the commit
       - run shell commands via provided tool (auto tool choice)
-      - read local skill instructions from disk when applicable (via tools/files, implied)
+      - read MCP resources via provided tools
+      - update a plan via provided tool
+      - edit files via apply_patch tool (capability present, though review instructions say not to generate PR fix)
       - output structured JSON findings and overall verdict
     forbidden_actions:
       - flag pre-existing bugs (only bugs introduced in the commit)
-      - speculate about breakage without provable affected code
-      - output a PR fix (generate full PR fix)
+      - speculate about breakage without provably affected code
+      - claim severity higher than warranted
+      - include code chunks longer than 3 lines in comments (outside suggestion blocks)
       - wrap final JSON output in markdown fences or extra prose
-      - include code chunks longer than 3 lines in comment bodies
-      - use suggestion blocks for anything other than concrete replacement code
-      - change outer indentation levels in suggestion blocks unless required by fix
+      - omit required code_location fields in findings
+      - generate a PR fix
+      - carry skills across turns unless re-mentioned
     conditional_actions:
-      - condition: "If more specific guidelines appear elsewhere (developer/user/file/system), they override general review guidelines."
+      - condition: If user names a skill or task matches a listed skill description
         allowed:
-          - follow the more specific guideline set
+          - open and follow the referenced SKILL.md workflow with progressive disclosure
         forbidden:
-          - treat general guidelines as final authority
-      - condition: "If a skill is named or task matches a skill description."
-        allowed:
-          - use the applicable skill(s) for that turn
-        forbidden:
-          - ignore an obvious applicable skill without stating why
-      - condition: "If a named skill is missing or unreadable."
+          - bulk-load skill reference files unnecessarily
+      - condition: If a named skill is missing or unreadable
         allowed:
           - state briefly and continue with best fallback
         forbidden: []
-      - condition: "If sandbox_permissions=require_escalated for shell_command."
+      - condition: If using shell_command
         allowed:
-          - include 1-sentence justification parameter
+          - set workdir parameter explicitly
         forbidden:
-          - omit justification
+          - rely on cd unless absolutely necessary
     escalation:
       allowed: true
       targets:
         - user
         - tool
-        - policy
     final_decision_maker: model
 
   scope:
     inputs_visible:
       - user messages (including AGENTS.md instructions and environment_context)
-      - tool outputs (shell_command results)
-      - reasoning summaries (but not full internal reasoning; encrypted content present)
+      - tool declarations
+      - tool call outputs (shell_command results)
+      - reasoning summaries (encrypted content included but not human-readable)
     outputs_allowed:
-      - JSON (strict schema for findings/verdict)
-      - inline review comments (as finding bodies)
-      - suggestion blocks (only for minimal replacement code)
+      - raw JSON (must match specified schema exactly)
+      - tool calls (functions and custom apply_patch)
     statefulness:
       memory: false
       session_persistence: false
     boundaries:
       hard_limits:
-        - "Final output must be valid JSON matching the specified schema exactly; no markdown fences or extra prose."
-        - "Do not generate a PR fix."
-        - "Do not flag pre-existing bugs."
+        - final output must be JSON matching the provided schema exactly (no fences/prose)
+        - do not generate a PR fix
+        - one-paragraph body per finding; avoid line breaks unless needed for code fragment
+        - no code chunks >3 lines in comment body
+        - code_location required; line ranges short and overlap diff
       soft_limits:
-        - "Ignore trivial style unless it obscures meaning or violates documented standards."
-        - "Prefer outputting no findings if nothing the author would definitely fix."
+        - ignore trivial style unless obscures meaning or violates documented standards
+        - prefer outputting no findings if none are clearly worth fixing
 
   environment:
     execution_context: local
@@ -111,55 +110,53 @@ layers:
     declared_tools:
       - name: shell_command
         type: function
-        description: "Runs a shell command; must set workdir; avoid cd unless necessary."
+        description: Run a shell command; must set workdir; avoid cd unless necessary.
         side_effects: true
       - name: list_mcp_resources
         type: function
-        description: "List MCP server resources; prefer over web search."
+        description: List MCP server resources; prefer over web search.
         side_effects: false
       - name: list_mcp_resource_templates
         type: function
-        description: "List MCP resource templates; prefer over web search."
+        description: List MCP server resource templates; prefer over web search.
         side_effects: false
       - name: read_mcp_resource
         type: function
-        description: "Read a specific MCP resource by server and URI."
+        description: Read a specific MCP resource by server and URI.
         side_effects: false
       - name: update_plan
         type: function
-        description: "Update task plan; at most one step in_progress."
+        description: Update task plan; at most one step in_progress.
         side_effects: true
       - name: apply_patch
-        type: custom
-        description: "Edit files using a freeform patch grammar (not JSON-wrapped)."
+        type: cli
+        description: Freeform patch application tool to edit files.
         side_effects: true
     invocation_rules:
       explicit: true
       constraints:
-        - "shell_command: always set workdir; avoid cd unless absolutely necessary"
-        - "Prefer MCP resources/templates over web search when possible"
-        - "apply_patch is freeform; do not wrap patch in JSON"
-        - "tool_choice=auto; parallel_tool_calls=false"
+        - tool_choice is auto; parallel_tool_calls disabled
+        - shell_command should include workdir
+        - apply_patch must be freeform (not JSON)
     abstraction_level: wrapped
     failure_handling: ask-user
 
   constraints:
     style:
       requirements:
-        - "One comment per distinct issue"
-        - "Comment body at most 1 paragraph; no line breaks unless needed for code fragment"
-        - "Matter-of-fact tone; not accusatory; avoid excessive flattery"
-        - "Finding title begins with priority tag [P0]-[P3] and is ≤80 chars, imperative"
-        - "Cite files/lines/functions in body"
-        - "Line ranges as short as possible; avoid >5–10 lines; overlap diff"
+        - matter-of-fact tone; not accusatory; not overly positive
+        - brief comments; body at most one paragraph
+        - one comment per distinct issue
+        - tag finding titles with priority label [P0]-[P3]
+        - include confidence_score per finding and overall_confidence_score
+        - include overall_correctness verdict and 1-3 sentence overall_explanation
       prohibitions:
-        - "Do not include code chunks longer than 3 lines in comment body"
-        - "Do not include unnecessary location details in comment body"
-        - "Do not use suggestion blocks except for concrete replacement code"
-        - "No commentary inside suggestion blocks"
+        - avoid flattery and unhelpful praise
+        - do not include unnecessary location details in comment body
+        - do not use suggestion blocks except for concrete replacement code
+        - do not change outer indentation levels in suggestion blocks unless required
     safety:
-      policies:
-        - unknown
+      policies: []
       refusal_style: unknown
     legal:
       restrictions: []
@@ -167,8 +164,8 @@ layers:
     formatting:
       enforced: true
       schemas:
-        - "Strict JSON output schema for findings and overall verdict"
-        - "apply_patch lark grammar (tool input format)"
+        - specified JSON output schema for findings and overall verdict
+        - apply_patch lark grammar (tool format)
 
   reasoning:
     visibility: partial
@@ -180,67 +177,66 @@ layers:
     self_review:
       enabled: true
       triggers:
-        - "Ensure output JSON matches schema exactly"
-        - "Ensure findings are discrete/actionable and introduced by commit"
-        - "Ensure code_location overlaps diff and line ranges are minimal"
+        - ensure findings are discrete/actionable and introduced in commit
+        - ensure output JSON matches schema exactly
+        - ensure line ranges are short and overlap diff
     external_feedback:
       sources:
         - user edits
         - tool outputs
-      incorporation_rules: "Defer to more specific guidelines encountered later; adjust findings accordingly."
+      incorporation_rules: Follow higher-priority, more specific guidelines when encountered; otherwise apply general review guidelines.
     iteration_limits:
       max_cycles: unknown
       timeout: unknown
 
   termination:
     stopping_conditions:
-      - "All qualifying findings listed (or none if no definite fixes)"
-      - "Overall correctness verdict and explanation provided"
-      - "Output JSON emitted without extra prose"
-    success_definition: "Valid JSON with complete findings list (possibly empty) and correct overall verdict per criteria."
+      - all qualifying findings listed, or none if no clearly fix-worthy issues
+      - output overall_correctness verdict and explanation
+    success_definition: Produce valid schema-matching JSON with accurate, actionable findings (or empty findings) and a justified overall verdict.
     abort_conditions:
-      - "Cannot access required context (diff/files) to make provable claims"
-      - "Skill files required by trigger rules are unreadable and block task"
-    handoff_behavior: ask user
+      - inability to access required context (e.g., missing diff) preventing code_location overlap
+    handoff_behavior: return control
 
 analysis:
   risk_model:
     primary_risks:
-      - "False positive bug reports due to missing diff/context"
-      - "Overly broad line ranges reducing review usefulness"
-      - "Schema noncompliance causing downstream parser failure"
-      - "Unintended side effects from shell_command/apply_patch in workspace-write mode"
+      - incorrect or non-conforming JSON output (schema mismatch)
+      - over-reporting speculative issues or pre-existing bugs
+      - leaking excessive code in comments (violating 3-line limit)
+      - unintended file modifications despite "do not generate a PR fix"
+      - executing shell commands with side effects in workspace-write sandbox
     mitigations:
-      - "Require provable impact; avoid speculation"
-      - "Prefer no findings when uncertain"
-      - "Enforce strict JSON schema and minimal line ranges"
-      - "Sandbox mode noted; approval_policy=never implies no interactive approval gate"
+      - strict output schema and formatting constraints
+      - guidelines requiring provable impact and commit-introduced issues only
+      - short line ranges and one-paragraph bodies
+      - suggestion block constraints and indentation preservation
+      - environment_context indicates restricted network and sandbox mode
   failure_modes:
     anticipated:
-      - "Outputs markdown fences or extra prose around JSON"
-      - "Flags pre-existing issues or speculative breakage"
-      - "Includes too-long code snippets or multi-paragraph bodies"
-      - "Omits required code_location fields"
-      - "Uses suggestion blocks incorrectly or with wrong indentation"
+      - no diff available leading to inability to provide overlapping code_location
+      - confusion between "apply_patch available" vs "do not generate PR fix"
+      - tool outputs empty (e.g., empty directory) limiting review content
+      - skills trigger rules causing unnecessary file reads if misapplied
     unmitigated:
-      - "No explicit mechanism to obtain diff/patch content in provided payload"
-      - "No explicit policy for handling encrypted reasoning content beyond summaries"
+      - no explicit policy for handling missing diff while still requiring code_location overlap
+      - no explicit prohibition on running destructive shell commands beyond sandboxing
   implicit_assumptions: >
-    The agent is expected to perform a code review against a diff/patch that should be available via
-    surrounding system/tooling context, even though the captured payload shows an empty workspace and
-    no diff content. The environment_context governs execution (workspace-write sandbox, restricted
-    network) and tool usage is permitted without user approval (approval_policy=never).
+    The agent is expected to have access to a code diff/patch context elsewhere in the session so it can cite
+    absolute_file_path and overlapping line ranges; the environment is a local workspace with write access but
+    network is restricted; "skills" are local files that can be opened when triggered; encrypted reasoning is
+    not intended for user visibility.
   notable_absences:
-    - "No explicit safety/refusal policy text (beyond review constraints)"
-    - "No explicit data privacy or secrets-handling rules"
-    - "No explicit definition of how to access the diff/patch content"
-    - "No explicit limits on number of tool calls or timeouts"
-    - "No explicit guidance for handling empty repositories/workspaces"
+    - no explicit privacy/data-handling rules beyond tool/environment constraints
+    - no explicit definition of how to determine whether a bug was introduced in the commit (methodology)
+    - no explicit guidance for when to use MCP resources vs filesystem reads
+    - no explicit maximum number of findings beyond "all qualifying"
+    - no explicit refusal policy for unsafe requests
 
 provenance:
   source_references:
-    - "Captured API payload: codex.review.json (model instructions + tool declarations)"
-    - "AGENTS.md instructions embedded in user message (skills framework)"
-    - "environment_context embedded in user message (sandbox/network/approval)"
+    - mitmproxy capture of codex.review.json invocation payload (model gpt-5.1-codex-max)
+    - local AGENTS.md instructions listing skills and trigger rules
+    - environment_context block (sandbox_mode workspace-write; network restricted)
   redactions_applied: false
-  compliance_notes: "Best-effort normalization; some fields unknown due to missing tool/vendor identifiers and absent safety policy text."
+  compliance_notes: Normalization derived from provided payload; tool vendor/name not present in capture.

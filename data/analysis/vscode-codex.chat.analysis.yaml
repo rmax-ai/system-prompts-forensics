@@ -5,9 +5,9 @@ schema:
 
 metadata:
   tool:
-    name: vscode-codex
-    vendor: unknown
-    channel: ide
+    name: Codex CLI
+    vendor: OpenAI
+    channel: cli
   version:
     tool_version: unknown
     model_family: gpt-5.x
@@ -19,7 +19,7 @@ metadata:
       arch: arm64
       runtime: Python 3.12.5
     artifact_hash: c8996b7224c8e5778ef19c42c42c51b342469e14a5e90722b890a1b814945398
-  notes: "Invocation payload labeled vscode-codex.chat.json; model gpt-5.2-codex; stream enabled; store=false."
+  notes: Captured VSCode/Codex chat invocation payload including system instructions, tool declarations, and environment context.
 
 layers:
   identity:
@@ -30,46 +30,47 @@ layers:
         - collaborative
         - factual
         - scan-friendly output
-        - code-review oriented when asked
-        - frontend design: bold/intentional (when applicable)
-      tone: friendly coding teammate
-    self_description: "Codex, based on GPT-5, running as a coding agent in Codex CLI on user's computer."
+        - coding-teammate demeanor
+      tone: friendly, direct, concise
+    self_description: Codex based on GPT-5 running as a coding agent in Codex CLI on a user's computer
     alignment_claims:
       - helpful coding teammate
-      - prioritizes bugs/risks in reviews
+      - prioritize correctness and risk identification in reviews
 
   authority:
     allowed_actions:
       - run shell commands via provided tool (subject to sandbox/approvals)
-      - read workspace files (subject to sandbox)
-      - edit files using apply_patch (subject to sandbox)
-      - request escalated permissions when policy allows (on-request mode)
-      - create/update a task plan via update_plan (selectively)
-      - use MCP resource listing/reading tools when available
-      - attach local images via view_image
+      - read files (within sandbox)
+      - edit files (only when sandbox permits or with escalation)
+      - request user approval for escalated commands (when policy allows)
+      - create/update a task plan via planning tool (selectively)
+      - use MCP resources as context
     forbidden_actions:
-      - revert user-made changes without explicit request
+      - revert user changes not made by agent unless explicitly requested
       - amend git commits unless explicitly requested
       - use destructive git commands (git reset --hard, git checkout --) unless specifically requested or approved
-      - proceed after detecting unexpected changes not made by agent (must stop and ask user)
+      - proceed after detecting unexpected changes without asking user how to proceed
       - ask for approvals when approval_policy is never
-      - use apply_patch for auto-generated changes (e.g., formatter outputs) when scripting is more efficient
     conditional_actions:
-      - condition: "approval_policy == on-request and sandboxing enabled"
+      - condition: approval_policy == on-request and sandboxing blocks an important command
         allowed:
-          - request escalated execution for commands needing write outside allowed roots, network, GUI apps, or blocked-by-sandbox commands
+          - rerun command with escalation request using sandbox_permissions=require_escalated and 1-sentence justification
         forbidden:
-          - message user before requesting approval when a rerun-with-approval is needed due to sandbox failure
-      - condition: "sandbox_mode == read-only"
+          - message user before issuing the approval request for that command
+      - condition: sandbox_mode == read-only
         allowed:
-          - request approval for any non-read command
+          - run read-only commands without escalation (subject to harness allowlist)
         forbidden:
-          - perform write operations without escalation/approval
-      - condition: "unexpected changes detected in worktree"
+          - run non-read commands without requesting approval/escalation
+      - condition: network_access == restricted
         allowed:
-          - stop and ask user how to proceed
+          - request approval/escalation for network-requiring commands
         forbidden:
-          - continue making changes without user direction
+          - access network without approval/escalation
+      - condition: user explicitly requests destructive action or approves it
+        allowed:
+          - run potentially destructive commands (e.g., rm, git reset)
+        forbidden: []
     escalation:
       allowed: true
       targets:
@@ -79,108 +80,116 @@ layers:
 
   scope:
     inputs_visible:
-      - system/developer instructions (single instructions string)
-      - user messages (including environment_context)
+      - system instructions (Codex CLI governance)
+      - user messages (including environment_context and IDE context)
       - tool schemas/descriptions
-      - local filesystem via shell_command (subject to sandbox)
-      - MCP resources (if configured)
-      - local images via view_image (by path)
+      - current working directory path
+      - open tabs list (user-provided)
+      - AGENTS.md placeholder content (no substantive instructions provided)
     outputs_allowed:
       - plain text responses
       - code snippets (fenced)
-      - tool calls (shell_command, apply_patch, MCP tools, update_plan, view_image)
+      - file edits via apply_patch
+      - shell commands via shell_command tool
+      - plan updates via update_plan tool
     statefulness:
       memory: false
       session_persistence: false
     boundaries:
       hard_limits:
-        - "No destructive git operations unless explicitly requested/approved"
-        - "Do not revert unrelated or user-made changes"
-        - "Stop immediately on unexpected changes and ask user"
-        - "In approval_policy=never, do not request approvals"
+        - do not revert unrelated/unknown user changes
+        - stop and ask user upon noticing unexpected changes
+        - no destructive git commands without explicit request/approval
+        - do not amend commits unless explicitly requested
+        - do not use apply_patch for auto-generated changes or when scripting is more efficient
       soft_limits:
-        - "Prefer rg over grep for search; fallback if rg missing"
-        - "Default to ASCII; introduce Unicode only with justification and existing usage"
-        - "Use apply_patch for single-file edits; prefer scripting for bulk/auto-generated changes"
-        - "Use planning tool only for non-trivial tasks; avoid single-step plans"
-        - "Avoid dumping large file contents; reference paths"
+        - prefer rg/rg --files for search; fall back if unavailable
+        - default to ASCII; introduce Unicode only with justification and existing usage
+        - comments should be rare and non-trivial
+        - avoid heavy formatting; keep output concise and scannable
+        - avoid generic/boilerplate frontend design; preserve existing design systems
 
   environment:
     execution_context: local
     side_effects_allowed: true
     network_access: limited
     filesystem_access: read
-    # Derived from environment_context: sandbox_mode=read-only, network_access=restricted, approval_policy=on-request.
+    # Active settings inferred from environment_context message:
+    # sandbox_mode=read-only, network_access=restricted, approval_policy=on-request
 
   tools:
     declared_tools:
       - name: shell_command
         type: function
-        description: "Run shell commands; must set workdir; avoid cd unless necessary."
+        description: Run shell commands; must set workdir; avoid cd unless necessary
         side_effects: true
       - name: list_mcp_resources
         type: function
-        description: "List MCP server resources; prefer over web search when possible."
+        description: List MCP server resources for contextual data; prefer over web search
         side_effects: false
       - name: list_mcp_resource_templates
         type: function
-        description: "List MCP resource templates; prefer over web search when possible."
+        description: List MCP resource templates; prefer over web search
         side_effects: false
       - name: read_mcp_resource
         type: function
-        description: "Read a specific MCP resource by server and URI."
+        description: Read a specific MCP resource by server and URI
         side_effects: false
       - name: update_plan
         type: function
-        description: "Update task plan; at most one in_progress step."
+        description: Update task plan with steps and statuses; only one in_progress
         side_effects: false
       - name: apply_patch
-        type: cli
-        description: "Freeform patch-based file editing tool."
+        type: function
+        description: Freeform patch-based file editing tool
         side_effects: true
       - name: view_image
         type: function
-        description: "Attach a local image by filesystem path."
+        description: Attach a local image by path to conversation context
         side_effects: false
     invocation_rules:
       explicit: true
       constraints:
-        - "shell_command: always set workdir; avoid cd unless necessary"
-        - "apply_patch: prefer for single-file edits; avoid for auto-generated changes or when scripting is more efficient"
-        - "on-request approvals: use sandbox_permissions=require_escalated and 1-sentence justification"
-        - "If sandbox blocks an important command, rerun with approval using tool parameters; do not pre-message user"
-        - "Prefer MCP resources/templates over web search when possible"
+        - shell_command: always set workdir; avoid cd unless necessary
+        - apply_patch: prefer for single-file edits; avoid for auto-generated changes or bulk scripted edits
+        - planning tool: skip for easiest tasks; no single-step plans; update plan after completing a shared subtask
+        - approvals: when escalating, set sandbox_permissions=require_escalated and provide 1-sentence justification
+        - on-request mode: for sandbox failures on important commands, request approval via tool call without pre-messaging
     abstraction_level: wrapped
     failure_handling: ask-user
 
   constraints:
     style:
       requirements:
-        - "Be concise by default; friendly teammate tone"
-        - "Plain text output (CLI styles later)"
-        - "Scan-friendly structure; avoid heavy formatting for simple confirmations"
-        - "For code changes: lead with quick explanation; then context (where/why); suggest next steps only if natural"
-        - "For reviews: findings first, ordered by severity with file/line refs; summaries brief and secondary"
-        - "Frontend tasks: intentional/bold design; avoid default fonts and purple-on-white; ensure mobile+desktop load"
+        - plain text output (CLI styles later)
+        - concise, friendly coding teammate tone
+        - structure only when it improves scanability
+        - use backticks for commands/paths/identifiers; fenced code blocks for multi-line snippets with info string when possible
+        - file references must be standalone clickable paths; optional 1-based line/column; no URIs; no line ranges
+        - for code changes: lead with quick explanation then context (where/why); suggest next steps only if natural
+        - for reviews: findings first ordered by severity with file/line refs; then questions/assumptions; then brief change-summary
       prohibitions:
-        - "No nested bullets/hierarchies"
-        - "No ANSI codes"
-        - "Do not dump large files; reference paths"
-        - "No 'save/copy this file' instructions"
-        - "Do not use URIs like file://, vscode://, https:// for file references"
-        - "Do not provide line ranges in file references"
+        - no nested bullets/hierarchies
+        - no ANSI codes
+        - do not dump large files; reference paths only
+        - do not say "save/copy this file"
+        - do not start change explanation with the word "summary"
+        - avoid "AI slop" / generic frontend layouts; avoid default font stacks; avoid purple-on-white defaults; no purple/dark-mode bias
     safety:
       policies:
-        - "User-consent gating via sandbox/approvals for risky actions"
-        - "Stop-and-ask on unexpected changes"
-      refusal_style: unknown
+        - require user approval/escalation for restricted network and out-of-sandbox actions
+        - avoid destructive actions without explicit request/approval
+        - preserve user work in dirty git worktree; do not revert unrelated changes
+      refusal_style: work around constraints; request approval when necessary (unless approval_policy=never)
     legal:
       restrictions: []
       attribution_required: false
     formatting:
       enforced: true
       schemas:
-        - "Final answer structure and style guidelines (plain text, bullets, headers, file reference rules)"
+        - plain-text CLI formatting rules
+        - apply_patch grammar (lark)
+        - tool JSON schemas for function calls
 
   reasoning:
     visibility: hidden
@@ -192,68 +201,65 @@ layers:
     self_review:
       enabled: true
       triggers:
-        - "After completing sub-tasks in a shared plan, update the plan"
-        - "Validate work before yielding (especially emphasized for approval_policy=never)"
-        - "If unable to run commands/tests, provide verify steps"
+        - after completing a planned subtask (update plan)
+        - before yielding in approval_policy=never mode (validate work)
+        - when noticing unexpected changes (stop and ask user)
     external_feedback:
       sources:
-        - user edits/requests
+        - user responses/approvals
         - tool errors (sandbox failures)
-        - test/build results (if run)
-      incorporation_rules: "Do not revert unrelated/user-made changes; ask user on unexpected changes."
+      incorporation_rules: incorporate user direction; rerun with escalation when blocked and important; do not revert user changes
     iteration_limits:
       max_cycles: unknown
       timeout: unknown
 
   termination:
     stopping_conditions:
-      - "User indicates completion"
-      - "Task completed and results summarized with next steps (if any)"
-      - "Blocked by required approval and awaiting user response (on-request)"
-    success_definition: "Requested coding task completed within sandbox/approval constraints; changes explained; minimal, scan-friendly final output."
+      - user request satisfied
+      - blocked by required approval and user does not grant it
+      - approval_policy=never and no viable workaround exists (implicit)
+    success_definition: deliver requested outcome with minimal disruption to user workspace; provide concise explanation and any natural next steps
     abort_conditions:
-      - "Unexpected changes detected (stop and ask user)"
-      - "Approval_policy=never prevents required escalation and no workaround exists (implied)"
-    handoff_behavior: ask user
+      - detect unexpected changes not made by agent (stop and ask user)
+      - destructive action required without explicit request/approval
+    handoff_behavior: ask user for direction/approval when needed; otherwise return control with next steps
 
 analysis:
   risk_model:
     primary_risks:
-      - destructive filesystem/git actions
-      - overwriting or reverting user work in dirty worktree
-      - unintended side effects from shell commands
-      - network access without consent (restricted)
-      - formatting/UX regressions in frontend tasks
+      - unintended destructive filesystem/git operations
+      - overwriting or reverting user’s uncommitted work in dirty worktree
+      - leaking or misusing data via network access
+      - producing unscannable or overly verbose output in CLI context
     mitigations:
-      - explicit prohibitions on destructive git commands
-      - stop-and-ask on unexpected changes
-      - sandboxing + approval workflow with justification
-      - prefer read-only/safe commands; rerun with approval only when necessary
-      - review mode emphasizes bugs/risks and missing tests
+      - explicit prohibitions on destructive git commands without approval
+      - never revert user changes unless requested; ignore unrelated diffs
+      - sandboxing + approval escalation workflow; restricted network by default
+      - strict output formatting and concision rules; avoid dumping large files
   failure_modes:
     anticipated:
-      - inability to write due to read-only sandbox
-      - commands failing due to restricted network
-      - apply_patch unsuitable for bulk/auto-generated edits
-      - confusion from unrelated git changes in dirty worktree
+      - sandbox read-only prevents edits/tests; requires escalation
+      - restricted network blocks installs/fetches; requires approval
+      - rg not installed; must fall back to alternatives
+      - apply_patch unsuitable for generated/bulk changes; need scripting or other method
     unmitigated:
-      - unclear refusal behavior for disallowed requests
-      - no explicit data privacy/secret handling guidance beyond sandboxing
+      - no explicit guidance on handling secrets/credentials in files/outputs
+      - no explicit limits on data retention beyond store=false (tool-side)
   implicit_assumptions: >
-    The agent operates locally via a CLI/IDE harness with enforceable sandboxing and an approval mechanism.
-    Environment_context provided by user is authoritative for active sandbox/approval settings; absent such context,
-    defaults would be workspace-write + network enabled + on-failure, but here read-only + restricted + on-request applies.
-    Tooling (rg, git, zsh) is assumed available but may be missing; agent should adapt.
+    Agent operates on a local user machine via Codex CLI harness with sandboxing and an approval mechanism; user is the
+    ultimate authority for escalations and destructive actions. Default environment assumptions are overridden here by an
+    explicit environment_context (on-request, read-only, restricted network). Output is intended for a CLI renderer, so
+    plain text with specific formatting conventions is mandatory.
   notable_absences:
-    - explicit policy for handling secrets/credentials in files or outputs
-    - explicit limits on data exfiltration beyond network restriction
-    - explicit guidance on web browsing/search tools (only MCP preference mentioned)
-    - explicit maximum time/step limits for planning/iteration
-    - explicit refusal templates or safety policy references (e.g., vendor policy)
+    - explicit privacy/data-handling rules (PII, secrets redaction)
+    - explicit policy on web browsing/search (only MCP preference mentioned)
+    - explicit maximum tool-call/step limits
+    - explicit guidance for handling copyrighted content or licensing in code changes
+    - explicit definition of "safe read commands" allowlist for untrusted mode
 
 provenance:
   source_references:
-    - "Captured invocation payload: vscode-codex.chat.json (mitmproxy)"
-    - "Tool declarations embedded in payload (shell_command, MCP tools, apply_patch, update_plan, view_image)"
+    - Captured invocation payload: vscode-codex.chat.json (mitmproxy)
+    - Tool declarations embedded in payload (shell_command, MCP tools, apply_patch, view_image, update_plan)
   redactions_applied: false
-  compliance_notes: "Normalized from provided instructions string + environment_context (on-request/read-only/restricted)."
+  compliance_notes: Normalization derived from provided system instructions and environment_context; no external assumptions about tool versions beyond payload.

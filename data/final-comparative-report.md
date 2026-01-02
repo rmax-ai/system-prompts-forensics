@@ -1,186 +1,159 @@
-## 1. Introduction
+### 1. Introduction
 
-This report compares how modern AI-assisted developer tools encode governance—authority, constraints, and interaction contracts—through their system-level constitutions. The scope covers CLI and IDE developer assistants spanning execution-oriented agents, review-only regimes, interactive terminal assistants, and planning-only modes.
+This report compares how contemporary AI-assisted developer tools encode governance—authority, constraints, and interaction contracts—through their system-level constitutions. The scope covers CLI and IDE-integrated assistants spanning Codex-oriented and Copilot-oriented products, plus an agentic CLI tool (opencode). Rather than treating these constitutions as task instructions, the analysis treats them as governance artifacts: they define who may act, what may be observed, which tools mediate action, how conflicts are resolved, and when interaction must stop.
 
-System constitutions are analyzed as governance artifacts because they define durable institutional properties: who holds decision authority, what actions are permitted or prohibited, what context is visible, how tools mediate side effects, and how the interaction terminates. These properties shape the permissible behavior space more than any single user request.
+Across the dataset, five stable governance regimes (prompt families) emerge alongside a tail of unstable singletons. The stable regimes correspond to: (i) a tightly coupled Copilot CLI interactive/base pair, (ii) a VSCode-integrated Codex trio with permission gradients, (iii) a Codex exec/review split, (iv) an opencode plan/build split, and (v) a VSCode Copilot trio segmented by ask/plan/agent modes.
 
-Across the dataset, the tools fall into several stable governance regimes (“prompt families”): a tight Copilot CLI interactive/prompt pair, a tight OpenCode build/plan pair, two stable VS Code platform umbrellas (Codex-oriented and Copilot-oriented), and a persistent outlier review constitution.
+---
 
-## 2. Methodological Summary
+### 2. Methodological Summary
 
-The analysis proceeds in four steps:
+The workflow normalizes heterogeneous system constitutions into a shared structural schema (identity, authority, scope, tools, constraints, correction, termination), reducing stylistic variance while preserving governance semantics. Similarity is then measured pairwise using a weighted score combining structural overlap, token-level similarity, and forbidden-action similarity. Band analysis evaluates how connected components form as similarity thresholds change, revealing stability ranges where regimes cohere. Prompt families are extracted as stable governance regimes within high-similarity bands, enabling comparison without relying on proprietary internals or performance claims.
 
-1. **Normalization**: Each captured constitution is decomposed into a shared schema (identity, authority, scope, tools, constraints, reasoning, correction, termination), reducing stylistic noise while preserving governance semantics.
-2. **Similarity measurement**: Pairwise similarity is computed using structural overlap and token-level similarity, combined into a weighted score; forbidden-action overlap is tracked separately.
-3. **Band analysis**: Similarity thresholds are swept to observe when components merge or fragment, revealing stability bands that correspond to different governance scales.
-4. **Family extraction**: Stable connected components at selected thresholds are treated as governance regimes (families), rather than mere clusters.
+This method supports defensible cross-tool comparison because it operates on observable constitutional content (roles, tool surfaces, prohibitions, escalation rules, output contracts) rather than model behavior or hidden implementation details.
 
-This method enables comparison without relying on proprietary internals: it uses only captured constitutions, normalized into a common representation, and justifies closeness/distance via explicit similarity scores and stability behavior.
+---
 
-## 3. The Prompt Family Landscape
+### 3. The Prompt Family Landscape
 
-**Family count and distribution.** The extraction yields 33 families across bands, but the landscape is dominated by a small number of stable regimes plus many threshold-induced singletons. Only a few families have size >1: key pairs (size 2), platform umbrellas (size 3–4), and cross-product umbrellas at lower thresholds (size 3–4). Confidence is correspondingly bimodal: high for stable multi-member regimes, low for repeated singletons that appear due to thresholding rather than durable separation.
+**Family structure.** The landscape contains **15 families**, of which **5 are multi-member stable regimes (F1–F5)** and **10 are singletons (F6–F15)**. The multi-member regimes range from **2 to 3 members** each, indicating that most stable regimes are either paired variants (base + mode overlay; phase split) or small mode suites (chat/agent/full-access; ask/plan/agent). Confidence is **high** for F1, F2, and F4; **medium** for F3 and F5; and **low** for the singleton tail, which overlaps with the multi-member regimes and is best interpreted as an artifact of assignment rather than distinct constitutions.
 
-**What similarity bands reveal about governance scale.**
+**Similarity bands and scale.** Band stability shows that at **0.77** all artifacts are isolated; at **0.76–0.74** only very tight pairs form; at **0.71–0.70** small operational suites (pairs/trios) appear; and at **0.57** everything collapses into a single component. Interpreted as governance scale:
+- **~0.76** captures near-identical constitutions (variant overlays within the same regime).
+- **~0.71** captures **operational governance regimes**: shared interaction contracts with meaningful mode/phase differentiation.
+- **≤0.57** collapses into **product-level commonalities** (shared schema and generic agent scaffolding), too coarse to distinguish regimes.
 
-- **High band (~0.74–0.71): mode-level near-identity.** Only one pair remains connected at these thresholds: the Copilot CLI interactive/prompt pair (weighted ≈0.742). This indicates near-identical interaction contracts with minor interface wrapper differences.
-- **Mid band (~0.70–0.65): operational constitutions separate.** Most artifacts become singletons; only the OpenCode build/plan pair remains cohesive (weighted ≈0.634). This band distinguishes operational governance (tool discipline, phase separation, refusal posture) rather than surface structure.
-- **Lower bands (~0.64–0.58): product/lineage umbrellas emerge.** Two IDE platform umbrellas become stable (Codex-in-VS Code; Copilot-in-VS Code), while non-IDE prompts merge into broader “developer workflow” umbrellas. This suggests that at these thresholds, shared platform embedding and shared workflow framing dominate over exact authority boundaries.
+---
 
-Band stability supports a three-level interpretation: **mode-level** similarity at the top band, **operational governance** in the mid band, and **product/lineage-level** governance at lower bands.
+### 4. Comparative Analysis of Governance Regimes
 
-## 4. Comparative Analysis of Governance Regimes
+#### F1 (0.74–0.77): copilot-interactive-prompt-pair (high)
 
-### Family F1 (copilot-interactive-prompt-pair)
+**Governance characteristics.**
+- **Authority boundaries:** Policy is explicitly the final arbiter (final decision maker = policy). Prohibitions include confidentiality of system rules, restrictions on sensitive data sharing, secrets in code, harmful content, and copyright infringement. There are also operational prohibitions (e.g., avoid pkill/killall; minimize deletions).
+- **Scope and visibility:** Persistent session behavior is present (session persistence true), and at least one variant indicates memory may be enabled; the constitution assumes an interactive terminal context with environment snapshots and tool outputs visible.
+- **Tool mediation:** A broad tool surface is declared: persistent bash sessions (sync/async), filesystem view/edit/create with absolute-path constraints, search tools (grep/glob), UI intent reporting, documentation fetch for capability questions, GitHub MCP tools, and web search. Tool invocation rules emphasize parallelization, suppression of verbose output, and strict pairing rules for UI intent reporting.
+- **Correction and termination:** Self-review is oriented toward regression avoidance (baseline and post-change checks) and minimal edits. Termination includes stopping when blocked by limitations or when user guidance is required.
 
-**Governance characteristics.** This regime encodes a terminal-assistant constitution with strong interaction discipline: concise responses, tool-first behavior, and explicit confidentiality constraints (non-disclosure of internal instructions). Authority is mediated through a rich tool surface (persistent bash sessions, file view/edit/create, GitHub MCP tools, web search) and a policy-final decision maker. It also encodes procedural constraints on tool usage (parallel tool calls, intent reporting rules, absolute-path requirements, and process-kill restrictions).
+**Interaction contract.** This regime encodes a **terminal assistant contract**: act through tools with minimal explanation, keep responses short, and treat policy/confidentiality as overriding user requests. It also encodes a “documentation-first” epistemic rule for capability questions, shifting authority from assistant memory to an internal documentation tool.
 
-**Interaction contract.** A high-tempo, tool-mediated terminal workflow: minimal explanation, rapid tool execution, and strict refusal boundaries around sensitive data, harmful content, and instruction disclosure.
+**Comparison to neighboring family (F5).** Both F1 and F5 are Copilot-oriented and policy-governed, but F1’s constitution is **interaction-first and tool-efficiency-first** (parallel tool calls, UI intent reporting, documentation fetch), whereas F5 is **mode-segmented** (ask/plan/agent) with stronger IDE-specific channel governance and identity constraints. The difference matters because F1 centralizes governance in tool mediation and operational efficiency, while F5 centralizes governance in mode routing and output-channel discipline.
 
-**Neighbor comparison (vs F2).** Both F1 and F2 are CLI-centered and tool-mediated, but F1 emphasizes _interaction protocol and confidentiality_ (e.g., instruction non-disclosure, documentation-first capability answers) while F2 emphasizes _workflow phase governance_ (plan vs build) and internal process controls (e.g., read-before-edit requirements, subagent delegation). The difference matters because it shifts governance from “how to converse and act safely in a terminal” (F1) to “how to structure multi-step engineering work across phases” (F2).
+---
 
-### Family F2 (opencode-build-plan-pair)
+#### F2 (0.70–0.72): vscode-codex-agent-chat-trio (high)
 
-**Governance characteristics.** This regime encodes a workflow constitution with explicit phase separation: a plan/read-only mode that prohibits modifications and a build/execution mode that permits edits and command execution. It includes strong prohibitions around malicious code assistance and malware-adjacent work, restrictions on URL generation, and explicit git safety constraints (no commits/pushes unless requested; avoid destructive/interactive git operations). Tool mediation is explicit and specialized (read/glob/grep/edit/write/task/webfetch/todo/skill), with procedural rules such as “read before edit/write” and constraints on when subagents or todo tools may be used.
+**Governance characteristics.**
+- **Authority boundaries:** The core boundary is **consent and workspace integrity**: prohibitions against destructive git/file operations without explicit request/approval, prohibitions against reverting user changes, and mandatory stop-and-ask behavior on unexpected changes. Approval policy and sandbox mode parameterize authority; in standard variants, the user is the final decision maker for escalation, while the full-access variant disables escalation and shifts final decision making to the agent within the configured mode.
+- **Scope and visibility:** The constitution assumes local execution with explicit environment context (sandbox_mode, network_access, approval_policy, writable_roots). Memory and persistence are off. Visibility includes tool outputs and limited IDE context (e.g., open tabs list).
+- **Tool mediation:** Tools are tightly scoped to local action: shell command execution with workdir constraints, patch application, plan updates, image attachment, and MCP resource listing/reading. Invocation rules encode a procedural escalation mechanism (rerun with escalated permissions plus a one-sentence justification, without pre-messaging).
+- **Correction and termination:** Correction is tied to plan updates and sandbox failures; termination includes pausing for user instruction when blocked by approvals or when unexpected changes are detected.
 
-**Interaction contract.** A process-governed engineering assistant: minimal verbosity, explicit tool discipline, and a constitution that can switch authority envelopes by mode (read-only planning vs write-capable building).
+**Interaction contract.** This regime encodes a **sandboxed local coding agent contract**: the agent may act, but authority is mediated by explicit environment parameters and a consent workflow. The constitution treats the user’s workspace state (dirty worktree, unexpected changes) as a protected asset, requiring procedural halts rather than unilateral remediation.
 
-**Neighbor comparison (vs F1).** Compared to F1’s emphasis on confidentiality and terminal interaction cadence, F2’s distinctive feature is _phase-locked authority_: plan mode hard-disables side effects, while build mode permits them under git and safety protocols. This difference matters because it externalizes governance into explicit operational phases rather than relying primarily on per-action prohibitions.
+**Comparison to neighboring family (F3).** Both are Codex-oriented and tool-mediated, but F2 is a **single-agent constitution with parameterized permissions**, whereas F3 is a **separation-of-duties regime** (execution vs review). The difference matters because F2’s governance is primarily about *how* to act safely in a shared environment, while F3’s governance is about *who* is authorized to judge correctness and what outputs are permitted.
 
-### Family F3 (singleton-codex-exec)
+---
 
-**Governance characteristics.** This execution-oriented constitution centers on local tool use (shell commands, patch editing, MCP resource access) with a sandbox/approval model and explicit prohibitions against destructive git/file actions unless requested or approved. It also encodes “stop-and-ask” behavior on unexpected workspace changes and a strong output contract (scan-friendly, path-referential, limited formatting).
+#### F3 (0.70–0.72): codex-exec-review-pair (medium)
 
-**Interaction contract.** A local executor with user-consent gating: proceed via tools, avoid destructive actions, and halt on unexpected diffs.
+**Governance characteristics.**
+- **Authority boundaries:** The exec constitution emphasizes safe execution (avoid destructive commands, stop on unexpected changes, do not amend commits unless asked) and tool-mediated escalation when permitted. The review constitution sharply constrains authority by **limiting what may be criticized** (only issues introduced in the commit), forbidding speculative claims, and forbidding generating a PR fix. It also imposes strict output constraints (schema-matching JSON only).
+- **Scope and visibility:** Both assume local tool access and MCP resources, but the review constitution assumes access to diff context sufficient to cite precise code locations and overlap line ranges.
+- **Tool mediation:** Both declare shell_command and MCP tools; review additionally allows apply_patch but constitutionally discourages using it for fixes. Tool choice is auto and parallel tool calls are disabled in the review capture, indicating a more serialized, controlled workflow.
+- **Correction and termination:** Review includes explicit self-checks for schema compliance and commit-introduced-only findings; termination is defined by producing a complete set of qualifying findings (or none) and a verdict.
 
-**Neighbor comparison (vs F11/F19 umbrella).** Although F3 is a singleton at stricter thresholds, it later joins the Codex-in-VS Code umbrella at lower thresholds, indicating shared platform governance. The key difference at strict bands is likely the _mode-specific execution framing_ (exec) versus the broader IDE agent/chat constitutions; this matters because it suggests that “exec” is a specialized operational posture within a shared platform regime.
+**Interaction contract.** This regime encodes a **two-role pipeline**: one constitution authorizes action in the workspace; the other authorizes judgment under strict evidentiary and formatting constraints. The review role is governance-heavy in output contract (machine-validated JSON) and epistemic restraint (provable impact, no speculation).
 
-### Family F4 (singleton-codex-review)
+**Comparison to neighboring family (F4).** Both are phase-separated regimes, but F3’s second phase is **audit/verification** with constrained authority and strict output schema, whereas F4’s second phase is **implementation** with operational tool constraints. The difference matters because F3 externalizes risk control into a distinct constitutional role, while F4 internalizes risk control into phase-specific permissions (read-only vs write).
 
-**Governance characteristics.** This review constitution is structurally distinct: it enforces a strict output schema (valid JSON only), forbids speculative claims, forbids flagging pre-existing issues, and constrains comment bodies and code snippet length. It is evaluation-centric rather than action-centric, even though tool execution may be available.
+---
 
-**Interaction contract.** A constrained auditor: produce provable, schema-compliant findings with minimal, tightly scoped evidence.
+#### F4 (0.70–0.72): opencode-build-plan-pair (high)
 
-**Neighbor comparison (vs F3).** Both are Codex-oriented and tool-capable, but F4’s authority is bounded by _epistemic and schema constraints_ (provability, JSON-only output, no PR fix generation), whereas F3 is bounded by _side-effect and consent constraints_ (destructive actions, approvals, unexpected changes). This difference matters because it encodes governance primarily as “what can be asserted and how it must be serialized,” not “what can be done.”
+**Governance characteristics.**
+- **Authority boundaries:** The defining boundary is **plan-mode read-only governance**: in plan mode, file edits and system-changing commands are forbidden. Outside plan mode, authority expands to editing/writing with tool-enforced read-before-edit/write constraints. A prominent safety boundary is refusal of malware/malicious-code assistance, including refusal to explain or improve suspicious code.
+- **Scope and visibility:** Local filesystem and terminal outputs are visible; web access exists via a dedicated fetch tool but is constrained by a “no URL guessing” rule. Session persistence is enabled, but memory is off.
+- **Tool mediation:** The tool surface is broad and explicitly structured: dedicated read/glob/grep/edit/write tools, bash with a safety protocol (especially for git), a task tool for subagents, todo tools, and a skill loader. Invocation rules discourage using bash for file operations and enforce read-before-edit/write.
+- **Correction and termination:** Correction includes post-task lint/typecheck when commands are discoverable, but plan mode forbids execution. Termination in plan mode is explicitly “stop after producing a plan / clarifying questions,” and after file work it stops without extra summary unless requested.
 
-### Family F5 (singleton-vscode-codex-agent-full-access)
+**Interaction contract.** This regime encodes a **process-oriented CLI agent contract**: governance is enforced through phase gating (plan vs build), tool separation (specialized file tools vs bash), and categorical refusals for malware-adjacent work. It also encodes a minimalism contract (very short responses unless requested) and explicit limits on proactive behavior (be proactive only within user-requested actions).
 
-**Governance characteristics.** This regime resembles the Codex agent constitution but with an expanded permission envelope (full access, network enabled, approval_policy=never). It explicitly forbids requesting approvals and expects autonomous completion within the enlarged authority scope, while retaining prohibitions on destructive git actions and stop-on-unexpected-changes behavior.
+**Comparison to neighboring family (F2).** Both are local tool-using agents, but F4’s governance is **tool-architecture-driven** (specialized tools, read-before-write enforcement, subagent delegation) and includes a strong malicious-code refusal boundary, whereas F2’s governance is **sandbox/approval-driven** (escalation parameters, user consent as final authority). The difference matters because F4 relies on internal tool discipline to bound risk, while F2 relies on external permissioning and user approvals.
 
-**Interaction contract.** An autonomous local agent operating under a “no-interactive-approval” rule: proceed without consent prompts, but remain constrained against destructive actions and unexpected diffs.
+---
 
-**Neighbor comparison (vs F6/F7).** Relative to the standard agent/chat variants, the distinctive governance feature is the _approval-policy inversion_: the constitution removes the approval dialogue as a control surface, shifting governance toward internal restraint and validation before yielding. This matters because it changes where control is exercised—from user-mediated approvals to constitutional prohibitions and self-checks.
+#### F5 (0.70–0.72): vscode-copilot-agent-ask-plan-trio (medium)
 
-### Family F6 (singleton-vscode-codex-agent)
+**Governance characteristics.**
+- **Authority boundaries:** Policy is the final decision maker. Identity is partially fixed (mandated responses for name/model queries). Safety governance includes fixed-string refusal for specified harmful categories and copyright avoidance. Operational authority is segmented: ask mode is largely read/search; agent mode includes editing and terminal execution; plan mode forbids implementation and imposes a mandatory research subagent step.
+- **Scope and visibility:** The constitution assumes an IDE environment with tool-mediated workspace access. Memory and persistence are off. A distinctive feature is **channel governance**: commentary-channel preambles are required before tool call batches, with strict non-leakage rules.
+- **Tool mediation:** Tool surfaces are extensive and IDE-specific: workspace search/read tools, diff/error retrieval, terminal execution, notebook tooling with strict constraints, todo management, subagent invocation, and limited web fetch/repo search tools. Invocation rules encode workflow discipline (todo state machine, exact-match replacement constraints, notebook execution rules).
+- **Correction and termination:** Correction is tied to diagnostics (errors/tests) and todo completion. Plan mode termination is explicit: stop after presenting a plan and request feedback; no tool calls after the research subagent returns.
 
-**Governance characteristics.** A tool-mediated IDE agent with sandbox/approval escalation rules, explicit destructive-action prohibitions, and stop-and-ask behavior on unexpected changes. It includes planning tool governance (when to plan, how to update plans) and strict output formatting conventions.
+**Interaction contract.** This regime encodes a **mode-routed IDE assistant contract**: user intent is routed into ask/plan/agent constitutions with distinct authority and tool surfaces. It also encodes a **presentation contract** (preambles, markdown formatting, sometimes emoji requirements) that governs how actions are narrated and how internal governance is kept confidential.
 
-**Interaction contract.** A cooperative IDE agent: act via tools within sandbox constraints, escalate only under defined conditions, and keep outputs scan-friendly and path-referential.
+**Comparison to neighboring family (F1).** Both are Copilot-oriented and policy-governed with broad tool surfaces, but F5 is more **constitutionally segmented by mode** and more **presentation-governed** (channel separation, preamble cadence, fixed identity strings). F1 is more **terminal-operational** (parallel tool calls, documentation fetch, absolute-path file ops) and less focused on multi-channel narration. The difference matters because F5 treats interaction framing as a governance mechanism (what can be said, where, and how), while F1 treats tool discipline and minimal-change norms as the primary governance mechanism.
 
-**Neighbor comparison (vs F7).** Compared to chat mode, the agent constitution more explicitly encodes _operational loops_ (planning updates, escalation workflows) and side-effect management. This matters because it formalizes autonomy as a governed process rather than a conversational helper posture.
+---
 
-### Family F7 (singleton-vscode-codex-chat)
+#### F6–F15: singleton-other (low)
 
-**Governance characteristics.** A conversational variant within the Codex-in-VS Code lineage, still tool-capable but framed around chat interaction. It retains the same core authority boundaries (no destructive actions without request/approval; stop on unexpected changes; sandbox/approval mediation) and the same output discipline.
+These singletons overlap with the multi-member regimes (e.g., artifacts already present in F2–F5 also appear as singletons). Given the band analysis and the family interpretation memo, they are best treated as **boundary echoes** produced by the extraction procedure rather than independent governance regimes. They do not add stable constitutional patterns beyond what is captured in F1–F5.
 
-**Interaction contract.** A chat-first interface to the same governed tool surface: conversational guidance with the option to act via tools under the same constraints.
+---
 
-**Neighbor comparison (vs F6).** The difference is primarily _interaction framing_ rather than authority: chat emphasizes explanation and dialogue, while agent emphasizes procedural execution governance. This matters because it suggests that within this lineage, “chat vs agent” is a mode-level contract layered atop a shared platform constitution.
-
-### Family F8 (singleton-vscode-copilot-agent)
-
-**Governance characteristics.** This IDE agent constitution encodes strong policy primacy (fixed refusal strings for disallowed content categories, explicit copyright avoidance), strict preamble/channel rules, and a broad tool surface including terminal execution, file operations, notebook tools, and subagents. It also encodes planning governance via a todo-list tool with strict state rules.
-
-**Interaction contract.** A policy-governed IDE agent with explicit UI protocol: milestone preambles, tool-use opacity (do not announce tool choice), and structured planning when tasks are non-trivial.
-
-**Neighbor comparison (vs F9/F10).** Compared to ask/plan variants, the agent mode has the broadest action surface (terminal, edits, subagents) and the most elaborate UI protocol. This matters because it concentrates governance in _policy compliance and interaction choreography_ rather than in sandbox/approval mechanics.
-
-### Family F9 (singleton-vscode-copilot-ask)
-
-**Governance characteristics.** A non-agentic assistance constitution emphasizing short, impersonal answers, policy compliance, and limited tool access (read/search/diff/symbol tools; no explicit edit/terminal tool in this capture). It includes operational prohibitions around commits and destructive actions, but the tool surface suggests a primarily advisory posture.
-
-**Interaction contract.** A read-oriented IDE assistant: inspect and explain, with strong policy/refusal constraints and limited side-effect capability.
-
-**Neighbor comparison (vs F12 pair).** Ask aligns closely with plan at lower thresholds (F12), indicating shared non-agentic governance. The difference matters because it separates “answering” from “planning” while keeping both within a read-oriented, policy-first authority envelope.
-
-### Family F10 (singleton-vscode-copilot-plan)
-
-**Governance characteristics.** A planning-only constitution with hard prohibitions on implementation and editing, plus a mandated research step via a subagent tool and a rule forbidding further tool calls after that step. It retains the same policy primacy (fixed refusal strings, copyright avoidance) and the same preamble/channel governance.
-
-**Interaction contract.** A deliberation-only regime: produce a plan under strict workflow sequencing and without side effects.
-
-**Neighbor comparison (vs F2 plan mode).** Both encode planning constraints, but this regime’s distinctive feature is _tool-call choreography_ (mandatory subagent-first, then no more tools) and _UI protocol_ (commentary preambles), whereas F2’s plan mode is primarily a _permission envelope_ (read-only) within a broader CLI workflow constitution. This matters because it shows two different ways to govern planning: sequencing constraints vs permission constraints.
-
-### Family F11 (vscode-codex-agent-chat-cluster)
-
-**Governance characteristics.** This stable platform regime unifies Codex execution/agent/chat/full-access variants at lower thresholds (avg weighted similarity ≈0.636–0.639 across repeated appearances). Shared constitutional features include: sandbox/approval mediation (even when disabled by policy), destructive-action prohibitions, stop-on-unexpected-changes behavior, MCP resource preference, and strict output formatting (scan-friendly, path references, minimal formatting).
-
-**Interaction contract.** A platform constitution for local code work: tool-mediated action with consent/permission logic, and a strong “do no harm to the workspace” posture.
-
-**Neighbor comparison (vs F18).** Both are IDE platform umbrellas, but this regime’s governance centers on _sandbox/approval and workspace integrity_ (unexpected changes, destructive commands), while the Copilot VS Code regime centers on _policy primacy, refusal strings, and UI protocol_ (preambles, tool opacity, todo governance). This difference matters because it locates control in different institutions: environment permissions vs policy-and-protocol constraints.
-
-### Family F12 (vscode-copilot-ask-plan-pair)
-
-**Governance characteristics.** A non-agentic Copilot VS Code regime where both modes share policy primacy, short/impersonal style, and limited side effects. Plan adds explicit planning templates and tool-call sequencing constraints; ask remains Q&A oriented.
-
-**Interaction contract.** Advisory and deliberative assistance without autonomous execution.
-
-**Neighbor comparison (vs F8).** The key difference is _authority surface_: F8 includes execution and editing tools plus todo governance for multi-step work, while F12 is closer to read/plan assistance. This matters because it separates “assistant as planner/advisor” from “assistant as acting agent” within the same platform lineage.
-
-### Families F13–F33 (repeated singletons and lower-threshold umbrellas)
-
-Across F13–F33, the repeated singleton families largely reflect threshold artifacts rather than stable distinct regimes, with two exceptions supported by stability behavior:
-
-- **Codex review remains isolated across all bands** (F4/F13/F20/F28/F33), indicating a genuinely distinct governance posture centered on evaluation and schema compliance rather than action.
-- **Non-IDE prompts merge into broader umbrellas at low thresholds** (F25, F30), indicating shared developer-work framing but weaker alignment on authority boundaries and tool mediation.
-
-## 5. Cross-Tool and Cross-Vendor Comparison
+### 5. Cross-Tool and Cross-Vendor Comparison
 
 **Codex-oriented vs Copilot-oriented families.**
+- Codex-oriented regimes (F2, F3) emphasize **workspace integrity and procedural consent**: prohibitions on destructive operations, stop-on-unexpected-changes, and explicit escalation workflows tied to sandbox/approval parameters. Governance is frequently expressed as *procedures for acting safely* in a local environment.
+- Copilot-oriented regimes (F1, F5) emphasize **policy primacy and interaction-channel governance**: confidentiality of system rules, fixed refusal strings for certain categories, fixed identity/model disclosures, and structured narration (preambles) around tool use. Governance is frequently expressed as *constraints on what may be said and how actions are mediated through UI/tooling*.
 
-- **Codex-oriented regimes (CLI exec; VS Code Codex umbrella)** emphasize _environment-mediated authority_: sandbox modes, approval policies, escalation parameters, and workspace integrity rules (not reverting unrelated changes; stop on unexpected diffs; destructive git prohibitions).
-- **Copilot-oriented regimes (Copilot CLI pair; VS Code Copilot umbrella)** emphasize _policy-mediated authority and interaction protocol_: fixed refusal strings, confidentiality of internal instructions, UI preamble rules, tool opacity (“do not announce tool choice”), and structured planning via todo or plan templates.
+**Convergence (shared governance patterns).**
+1. **Tool-mediated authority** is universal: action is permitted primarily through declared tools with explicit invocation constraints (workdir requirements, absolute paths, exact-match edits, batching rules).
+2. **Protected user state** appears across regimes: avoid destructive operations, avoid unintended file loss, and require explicit user intent for high-risk actions (commits, destructive commands).
+3. **Mode/phase segmentation** is common: chat vs agent vs full-access; ask vs plan vs agent; plan vs build; exec vs review. Governance increasingly appears as a suite of constitutions rather than a single monolith.
 
-**Convergence patterns (shared governance primitives).**
-
-1. **Tool mediation as constitutional structure**: all regimes define explicit tool surfaces and invocation constraints, treating tools as the legitimate channel for side effects.
-2. **Side-effect risk controls**: destructive-action prohibitions and cautious file/command handling recur across tools, though implemented via different mechanisms (approvals vs confirmations vs prohibitions).
-3. **Mode separation**: multiple tools encode distinct constitutions for plan vs act vs ask/review, indicating a common governance pattern of authority envelopes by mode.
-
-**Divergence patterns (distinct authority or safety models).**
-
-- **Consent and permissions** diverge: Codex regimes encode explicit approval/escalation mechanics; Copilot VS Code regimes encode policy primacy and confirmation rules rather than a sandbox escalation protocol in the captured constitutions.
-- **Refusal formalism** diverges: Copilot VS Code constitutions include fixed-string refusal requirements for certain categories; Codex and OpenCode emphasize procedural safety constraints and do not show the same fixed-phrase mechanism in the captured artifacts.
-- **Interaction protocol** diverges: Copilot VS Code encodes commentary-channel preambles and tool opacity as governance; Codex regimes encode output scanability and file reference formats but not the same UI cadence rules.
+**Divergence (distinct authority or safety models).**
+- **Consent model divergence:** Codex regimes encode consent via sandbox approvals and escalation parameters with the user as final authority (in standard modes), while Copilot regimes encode consent via policy finality and fixed refusal/identity constraints.
+- **Safety scope divergence:** opencode uniquely foregrounds malware/malicious-code refusal as a primary boundary; Copilot foregrounds content-policy categories and confidentiality; Codex foregrounds destructive-operation avoidance and workspace integrity.
+- **Narration governance divergence:** VSCode Copilot encodes a strong two-channel contract (commentary preambles vs final answers) and prohibits leakage through preambles; Codex CLI regimes focus more on output scanability and file reference formatting than on channel separation.
 
 **Mode-driven vs product-driven vs lineage-driven differences.**
+- Many differences are **mode-driven** (plan-only vs build/agent; read-only vs full-access) as shown by tight within-family similarity (F1, F2, F4).
+- Some differences are **product-driven** (IDE narration/preambles, notebook tool governance, todo state machines in VSCode Copilot).
+- Lineage effects are visible but conservative: Codex families share a consent/sandbox framing; Copilot families share policy primacy and confidentiality constraints. Similarity scores indicate that cross-vendor structural similarity remains high (structural similarity often near 1.0), suggesting shared constitutional scaffolding even where authority models diverge.
 
-- **Mode-driven**: plan vs agent vs chat/ask differences are visible within each platform umbrella (e.g., planning-only prohibitions; chat vs agent interaction framing).
-- **Product-driven**: IDE embedding produces stable umbrellas (Codex-in-VS Code; Copilot-in-VS Code) that persist across thresholds, indicating platform-level governance contracts.
-- **Lineage-driven**: non-IDE Copilot and OpenCode merge only at lower thresholds, suggesting shared developer-work framing but distinct operational governance.
+---
 
-## 6. Key Findings
+### 6. Key Findings
 
-1. **IDE embedding produces stable platform constitutions**: both VS Code umbrellas remain cohesive across multiple lower thresholds, indicating durable platform-level governance regimes rather than mode-specific templates.
-2. **High-band similarity isolates near-identical interaction wrappers**: only the Copilot CLI interactive/prompt pair clusters at ~0.72 (weighted ≈0.742), consistent with a single constitution expressed through two entrypoints.
-3. **Operational governance separates sharply at mid bands**: at ~0.68, most artifacts become singletons except the OpenCode build/plan pair, indicating that operational authority/tool contracts diverge even when structural schemas align.
-4. **Review governance is constitutionally distinct**: the review regime remains isolated across all bands, reflecting a different authority model centered on provability and strict output schemas rather than tool-mediated action.
-5. **Governance shifts from permission control to protocol control across lineages**: Codex-oriented regimes emphasize sandbox/approval mechanics; Copilot-oriented regimes emphasize policy primacy, refusal formalism, and UI/tool-use protocol.
+1. **Governance converges on tool-mediated constitutions**: authority is primarily exercised through declared tools with explicit invocation constraints, rather than through free-form action.
+2. **Governance diverges on the locus of final authority**: Codex regimes frequently place escalation decisions with the user via approval workflows, while Copilot regimes more often place final authority with policy, including fixed refusal and identity constraints.
+3. **Operational safety is encoded as workspace-state protection across tools**, especially via prohibitions on destructive commands and mandatory stop-and-ask behavior when unexpected changes are detected.
+4. **Mode/phase segmentation is a dominant governance pattern**: stable regimes are suites of constitutions (ask/plan/agent; chat/agent/full-access; plan/build; exec/review) rather than single constitutions.
+5. **At similarity thresholds around ~0.71, regimes reflect operational interaction contracts**, while below ~0.57 the landscape collapses into product-level common scaffolding, indicating a governance “phase transition” from regime-specific to generic agent structure.
 
-## 7. Implications
+---
 
-**For tool designers.** The dataset suggests two dominant governance strategies: (a) permission- and approval-mediated authority (sandbox/escalation), and (b) protocol- and policy-mediated authority (fixed refusals, UI cadence, tool opacity). Designers can treat these as composable constitutional modules rather than monolithic prompts, selecting control surfaces appropriate to the environment (local CLI vs IDE) and mode (plan vs act vs review).
+### 7. Implications
 
-**For researchers studying agentic systems.** Band stability indicates that governance regimes can be meaningfully separated by scale: mode-level wrappers, operational constitutions, and platform-level umbrellas. This supports comparative work that focuses on authority boundaries and tool mediation rather than stylistic differences.
+**For tool designers.** The evidence suggests that robust governance is increasingly achieved by **constitutional modularity**: separate modes/phases with distinct authority boundaries and tool surfaces. Designers can externalize risk control by (i) gating side effects via explicit approval parameters, (ii) enforcing tool-level preconditions (e.g., read-before-write), and (iii) using strict output contracts (schemas) where downstream automation depends on compliance.
 
-**For future prompt-governance evolution.** The presence of explicit phase separation (plan vs build) and explicit UI protocol (preambles, tool opacity) suggests a trend toward externalizing governance into structured workflows and interaction contracts, not merely expanding instruction length.
+**For researchers studying agentic systems.** Prompt families behave like **stable governance regimes**: they encode recurring constitutional primitives (escalation workflows, protected workspace invariants, tool invocation law, narration/channel separation). Comparative work should focus on these primitives rather than surface wording, and should treat similarity bands as evidence for regime boundaries.
 
-## 8. Limitations and Future Work
+**For future prompt-governance evolution.** The trajectory implied by the regimes is toward **multi-constitution systems**: governance is distributed across mode routers, phase gates, and tool contracts. This supports more granular authority allocation (e.g., planning without execution; review without fixing) without requiring a single constitution to cover all cases.
 
-This analysis cannot conclude actual runtime enforcement, true permission boundaries, or data handling practices beyond what is encoded in the constitutions. It also cannot attribute intent beyond the explicit governance text and tool schemas captured.
+---
 
-Future work that would strengthen comparisons includes: (1) temporal/versioned captures to test regime stability over time, (2) additional tools and domains beyond developer workflows, (3) richer environment captures that clarify active sandbox/network settings, and (4) systematic feature audits that quantify specific authority primitives (approval gates, refusal formalism, tool opacity, schema enforcement) across regimes.
+### 8. Limitations and Future Work
 
-## 9. Conclusion
+This analysis cannot conclude actual runtime enforcement, real permission boundaries, or the effectiveness of safeguards; it only characterizes what is encoded constitutionally. It also cannot resolve whether the singleton families represent genuine regimes, given their overlap with multi-member regimes and the sensitivity of family extraction to thresholding.
 
-Modern developer tools converge on treating system constitutions as governance layers that define authority, tool mediation, and termination behavior. They diverge primarily in where control is institutionalized: environment permissions and approvals versus policy formalism and interaction protocol. Similarity bands and stability behavior show that governance operates at multiple scales—mode, operational workflow, and platform lineage—making constitutional analysis a defensible lens for comparing agent architectures without relying on proprietary internals.
+Future work would be strengthened by: (i) additional temporal versions to test regime stability over time, (ii) more tools and domains beyond developer tooling, (iii) a strict partitioning or explicit multi-membership rationale for family assignment, and (iv) richer environment captures that explicitly state active sandbox/network/approval settings for all artifacts.
+
+---
+
+### 9. Conclusion
+
+Modern developer tools encode governance through constitutions that define authority boundaries, tool-mediated action, protected workspace invariants, and termination/correction rules. The comparative landscape shows both convergence—shared reliance on tool contracts and safety invariants—and divergence—different loci of final authority (user approval workflows vs policy primacy) and different governance mechanisms (phase gating, mode routing, narration/channel separation). Treating these constitutions as governance artifacts provides a practical lens for comparing agent architectures without relying on proprietary internals, and it highlights modular constitutional design as a central pattern in contemporary developer tooling.

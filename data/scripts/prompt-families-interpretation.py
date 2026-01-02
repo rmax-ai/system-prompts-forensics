@@ -29,8 +29,9 @@ import openai
 def read_text(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
-    except Exception as e:
-        sys.exit(f"Failed to read {path}: {e}")
+    except Exception:
+        logging.exception(f"Failed to read {path}")
+        sys.exit(1)
 
 
 def main() -> None:
@@ -45,6 +46,9 @@ def main() -> None:
         "--model",
         default="gpt-5.2",
         help="Model name (default: gpt-5.2)",
+    )
+    parser.add_argument(
+        "--seed", type=int, help="Seed for deterministic inference (optional)"
     )
     parser.add_argument(
         "--output",
@@ -92,6 +96,8 @@ def main() -> None:
     if args.dry_run:
         print("Dry run — request payload:")
         print(f"Model: {args.model}")
+        if args.seed is not None:
+            print(f"Seed: {args.seed}")
         print("Messages:")
         for m in messages:
             print(f"\n[{m['role']}]\n{m['content']}")
@@ -104,10 +110,12 @@ def main() -> None:
         response = client.chat.completions.create(
             model=args.model,
             messages=messages,
-            temperature=0,
+            temperature=0.1,
+            seed=args.seed,
         )
-    except Exception as e:
-        sys.exit(f"API call failed: {e}")
+    except Exception:
+        logging.exception("API call failed")
+        sys.exit(1)
 
     output = response.choices[0].message.content
     if not output:
@@ -118,8 +126,9 @@ def main() -> None:
         try:
             out.write_text(output.strip(), encoding="utf-8")
             logging.info(f"Interpretation report written to {out}")
-        except Exception as e:
-            sys.exit(f"Failed to write output file: {e}")
+        except Exception:
+            logging.exception("Failed to write output file")
+            sys.exit(1)
     else:
         print(output.strip())
 

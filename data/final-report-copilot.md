@@ -1,127 +1,114 @@
 ## 1. Assistant Overview
 
-The assistant under analysis is **GitHub Copilot CLI** (“copilot”), operating as a **terminal assistant** built by GitHub. The modes included are:
+The assistant under analysis is **GitHub Copilot CLI** (“copilot”), operating as a **terminal assistant** built by GitHub for **software engineering tasks** in a local CLI environment.  
 
-- **interactive**
-- **prompt**
+**Modes included:**  
+- `interactive`  
+- `prompt`  
 
-Across both modes, the implied purpose is to support **software-engineering work in a local CLI context**, emphasizing **efficiency, minimal/surgical repository changes, and tool-mediated execution** (shell commands, file operations, and GitHub/web retrieval where available).
+Across both modes, the assistant’s implied purpose is to help users complete software-engineering work (code changes, repository inspection, running tests/linters, and limited network-mediated lookups) while enforcing confidentiality, safety, and minimal-change norms.
 
 ## 2. Methodological Note
 
-This report is derived solely from **normalized system-prompt schemas** and a **structural comparison across modes**, treating each mode as a distinct governance variant and analyzing invariants and deltas in authority, scope, tool mediation, and correction/termination logic.
+This report is derived solely from **normalized system-prompt schemas** and a **structural comparison** of governance elements across the two modes, treating each mode as a distinct governance variant.
 
 ## 3. Shared Constitutional Core
 
-Across both modes, the assistant maintains a stable governance baseline:
+Across both modes, the assistant maintains a stable governance core:
 
-- **Identity invariants**: A “GitHub Copilot CLI terminal assistant” with an efficiency-oriented, software-engineering focus and a concise/direct tone.
-- **Hard safety prohibitions**: Consistent bans on (a) disclosing or discussing confidential system instructions, (b) exfiltrating sensitive data to third parties, (c) committing secrets, (d) generating harmful content, and (e) generating copyright-infringing content.
-- **Operational safety constraints**: A specific process-management rule forbidding **name-based killing** (`pkill`/`killall`) and requiring **`kill <PID>`**, plus a general preference against destructive file operations (deletion/modification of “working files” unless necessary).
-- **Tool-mediated work style**: Both modes authorize shell execution and repo file operations via explicit tools, with strong guidance to minimize turns, suppress verbose output, and prefer specialized search tools (`grep`/`glob`) over ad hoc shell searching.
-- **Correction posture**: Both modes require self-review tied to tool outputs and validation norms (run relevant tests/linters/builds when applicable; avoid breaking existing behavior).
-- **Termination logic**: Both stop when the task is complete, when blocked by prohibitions/limitations, or when user guidance is required to proceed safely.
+- **Identity and role invariance:** A “terminal assistant” oriented toward software engineering, with a concise/direct tone and a bias toward minimal, surgical changes.
+- **Policy supremacy:** The **final decision-maker is “policy”** in both modes, establishing a hard authority ceiling over user requests.
+- **Hard prohibitions:** Both modes prohibit (i) disclosure/discussion of system instructions, (ii) third-party sharing of sensitive data, (iii) committing secrets into code, (iv) harmful content, and (v) copyright-infringing generation (with a specified refusal style).
+- **Operational safety constraints:** Both modes restrict destructive actions (avoid deleting/modifying working files unless necessary) and impose process-safety rules (no `pkill/killall`; use PID-based termination).
+- **Tool-mediated agency:** Both modes authorize tool use for bash execution, filesystem operations, search, GitHub MCP access, web search, and documentation retrieval, with explicit invocation constraints (absolute paths for file tools; prefer grep/glob; parallelize independent tool calls).
+- **Correction norms:** Both modes require self-review behaviors oriented to regression avoidance (validate changes; run existing tests/linters/builds when relevant; reflect on tool output).
+- **Termination logic:** Both modes stop when the task is complete or when blocked by prohibitions/limitations, with a handoff pattern of requesting user guidance when needed.
 
-This invariant core suggests a foundational role: a **locally-acting engineering agent** whose autonomy is bounded by **confidentiality, non-exfiltration, and minimal-change discipline**, with correctness grounded in **tool outputs and validation** rather than free-form reasoning.
+This invariant core suggests a design centered on **bounded autonomy**: the assistant is empowered to act on a local repo and consult external sources via designated tools, but is tightly constrained by confidentiality, safety, and minimal-change principles.
 
 ## 4. Mode-by-Mode Governance Analysis
 
 ### Mode: interactive
 
 - **Authority and permissions**
-
-  - Broad operational authority to execute shell commands, search/view/edit/create files, and query GitHub resources via MCP tools; web search is also available.
-  - Notable conditional authority: when asked about Copilot CLI capabilities/how-to, the assistant must **consult documentation first** via a dedicated tool and may not answer from memory.
-  - The “final decision maker” is explicitly **policy**, indicating a governance stance where compliance constraints override model discretion.
+  - Broad permission to execute software-engineering tasks with tool use, including repository edits and running existing checks.
+  - Adds a specific governance rule for UI intent signaling: `report_intent` must be used on the first tool-calling turn after each user message, must be first, and must be paired with another tool call—creating a procedural obligation tied to tool usage cadence.
+  - Enforces capability-question discipline: for “how to use the CLI” questions, documentation must be fetched first; answering from memory is disallowed.
 
 - **Scope and visibility**
-
-  - Inputs include system instructions, user messages, environment context (cwd/repo snapshot), and tool outputs; state is persistent (memory and session persistence).
-  - Outputs are constrained to terminal-oriented concise text, tool calls, and file edits/creates.
-  - Boundaries emphasize staying within cwd/child directories for filesystem search unless necessary, and avoiding creation of markdown planning/tracking files unless explicitly requested.
+  - Explicitly stateful: **memory enabled** and **session persistence enabled**, implying the mode can carry forward user context and prior decisions beyond immediate turns.
+  - Inputs include system instructions, user messages, environment context (cwd/repo root and directory snapshot), and tool outputs; outputs include tool calls and file patches.
 
 - **Interaction contract**
-
-  - Strong brevity contract: explanations capped (≤3 sentences), tool calls ideally without explanation, and minimal LLM turns with parallel tool calls for independent operations.
-  - “Minimal-change-oriented” is operationalized as “smallest possible/surgical file changes,” preferring view/edit over create, and cleaning temporary files.
+  - Strong brevity contract: explanations capped at three sentences; tool-call explanations capped at one sentence; tool calls should be issued “without explanation” as a default.
+  - Minimal-change orientation is emphasized as a success criterion (“smallest surgical changes” and “no regressions”), and the mode discourages creating planning/notes files unless explicitly requested.
 
 - **Correction and termination behavior**
-  - Self-review triggers include reflecting on command output and validating that changes do not break behavior; baseline and post-change validation is expected when applicable.
-  - If blocked by prohibitions, the assistant must stop and inform the user; if uncertain, it should ask for guidance.
+  - Self-review is always-on with explicit triggers (baseline and post-change checks when relevant; reflect on command output).
+  - Termination includes an explicit stopping condition for “uncertainty requiring user guidance,” indicating a governance preference to halt rather than speculate when blocked by ambiguity.
 
 ### Mode: prompt
 
 - **Authority and permissions**
-
-  - Similar tool and task authority to interactive (bash, grep/glob, view/edit/create, GitHub MCP, web search, documentation fetch, intent reporting, and TODO management).
-  - The “final decision maker” is explicitly the **model**, a structural shift toward model-mediated discretion within the same prohibition set.
-  - Additional explicit conditionality around **parallel tool calling**: sequential multi-turn tool calls are discouraged when parallelization is possible.
+  - Similar baseline permissions (tools, minimal edits, run existing checks, ask for guidance, refuse prohibited requests).
+  - Introduces an explicit governance rule favoring **parallel tool calling** when multiple independent operations are needed, framing efficiency as a compliance requirement rather than a preference.
+  - Includes a more explicit prohibition against creating markdown planning/notes/tracking files unless the user requests a specific file by name/path (this prohibition is present in `interactive` as well, but is more directly embedded in the authority layer here).
 
 - **Scope and visibility**
-
-  - Inputs include conversation messages, environment context, tool outputs, and repository files accessible via tools; state is persistent.
-  - Outputs are short text responses, tool calls, and file patches; the mode includes an explicit formatting constraint reflecting the current instruction context (YAML-only in a Markdown code block), indicating tighter output-shaping in this mode.
+  - More restrictive state model: **memory disabled** while **session persistence remains enabled**, implying continuity of the tool session but reduced permission to retain conversational state as “memory.”
+  - Visibility otherwise parallels `interactive`: system instructions, user messages, environment context, directory snapshot, and tool outputs.
 
 - **Interaction contract**
-
-  - Maintains the same concision and minimal commentary norms, including sentence limits and “tool calls without explanation.”
-  - Reinforces constraints against creating markdown planning/notes/tracking files unless explicitly requested, while still allowing an organizational TODO tool for complex tasks.
+  - Concision requirements are formalized similarly (≤3 sentences for explanations; ≤1 sentence when making a tool call; CLI-friendly output).
+  - Reinforces “security/privacy constrained” alignment claims, and emphasizes avoiding unrelated issues and keeping changes task-scoped.
 
 - **Correction and termination behavior**
-  - Similar validation expectations (avoid breaking behavior; run tests/linters/builds when applicable).
-  - Termination includes stopping when blocked or when user guidance is required; success is defined as precise minimal changes with relevant validations passing.
+  - Self-review triggers mirror `interactive` (validate behavior; run existing checks when relevant; reflect on outputs).
+  - Termination conditions are slightly narrower in expression (task satisfied or blocked), with uncertainty handled via “cannot proceed without user guidance” as an abort condition rather than a distinct stopping condition.
 
 ## 5. Comparative Mode Analysis
 
 - **Most constrained vs most permissive**
+  - On **statefulness**, `prompt` is more constrained (memory off), while `interactive` is more permissive (memory on). This is the clearest governance divergence.
+  - On **procedural tool governance**, `interactive` is more prescriptive about **intent-reporting cadence** (first tool-calling turn after each user message), whereas `prompt` is more prescriptive about **parallelization** as an explicit conditional rule.
 
-  - Both modes are comparably constrained on safety and operational discipline (confidentiality, non-exfiltration, minimal-change, PID-only killing, documentation-first for capability questions).
-  - The primary governance divergence is **decision authority**:
-    - **interactive** centralizes ultimate authority in **policy** (more externally constrained).
-    - **prompt** assigns ultimate authority to the **model** (more internally discretionary), while still operating under the same prohibitions and tool rules.
-
-- **Authority expansion/narrowing**
-
-  - Tool permissions are largely equivalent; differences are not in what tools exist but in **how discretion is framed** (policy-final vs model-final) and in **output formatting constraints** (prompt mode explicitly encodes a stricter formatting requirement tied to the current instruction context).
-  - Prompt mode more explicitly encodes a norm against sequential tool usage when parallelization is possible, tightening the efficiency contract.
+- **Authority expansion, narrowing, and conditionality**
+  - Both modes keep the same hard authority ceiling (policy final) and the same core prohibitions.
+  - `interactive` expands operational continuity via memory, potentially increasing the assistant’s effective autonomy in multi-step tasks.
+  - `prompt` narrows continuity by disabling memory, reducing the assistant’s ability to carry forward implicit context and thereby limiting long-horizon agentic behavior.
 
 - **Governance gradients**
-  - A clear gradient emerges along two axes:
-    1. **Adjudication locus**: policy-adjudicated (interactive) → model-adjudicated (prompt).
-    2. **Output shaping**: terminal-concise (interactive) → terminal-concise plus explicit structured-format constraint (prompt).
+  - A gradient emerges from **procedural compliance** (both modes) to **state retention** (divergent): the assistant is consistently tool-governed and safety-bounded, but modes differ in how much persistent conversational context is permitted.
 
 ## 6. Design Patterns and Intent
 
-Recurring governance strategies across modes indicate a consistent design philosophy:
+Several recurring governance strategies appear across modes:
 
-- **Tool mediation as accountability**: Both modes privilege tool outputs as ground truth and require explicit tool invocation rules (parallelization, output suppression, pager disabling). This reduces free-form action and channels behavior through auditable operations.
-- **Minimal-change doctrine**: The assistant is governed as a “surgical editor” rather than a refactoring agent—avoid deletion, prefer small edits, and validate changes.
-- **Risk containment through specific prohibitions**: The PID-only kill rule and restrictions on filesystem search scope are concrete, operationally enforceable constraints aimed at preventing high-impact mistakes in a local environment.
-- **Epistemic discipline via documentation-first**: Capability/how-to questions are governed by an “authoritative source first” rule, limiting improvisation about the tool’s own features.
-- **Mode differentiation as governance, not capability**: The modes do not primarily differ by tool access; they differ by **who/what is framed as the final arbiter** (policy vs model) and by **how strictly outputs are shaped**, suggesting mode selection is used to tune responsibility allocation and compliance posture rather than functional breadth.
+- **Tool mediation as a control surface:** Both modes rely on explicit tool schemas and invocation constraints (absolute paths, scoped search, parallel calls, process termination rules). This channels agency into auditable, structured actions rather than free-form execution.
+- **Minimal-change doctrine:** The assistant is governed to avoid broad refactors, avoid unnecessary file creation, and avoid destructive edits—suggesting a design intent to reduce operational risk in real repositories.
+- **Anti-hallucination governance for product knowledge:** Capability/how-to questions are constrained to documentation retrieval first, indicating a preference for authoritative grounding over model recall.
+- **Confidentiality-first posture:** System-instruction secrecy and sensitive-data non-exfiltration are hard limits, implying a design philosophy that treats the CLI environment as potentially containing high-value secrets.
+- **Mode differentiation as risk management:** The primary mode-level lever is **memory** (enabled vs disabled), indicating that the assistant’s designers treat state retention as a key governance variable for controlling autonomy and exposure.
 
 ## 7. Implications
 
 - **For users**
-
-  - Users should expect consistent refusals and stopping behavior around confidentiality, exfiltration, secrets, harm, and infringement across modes, with strong pressure toward minimal edits and short responses.
-  - In prompt mode, users may experience stricter output formatting constraints, affecting how instructions should be phrased when requesting narrative explanations versus structured output.
+  - Users should expect consistent refusals and confidentiality boundaries across modes, with differences mainly in how much context the assistant can retain and how it structures multi-step work (intent reporting vs parallelization emphasis).
+  - The minimal-change mandate implies that users may need to explicitly request broader refactors or non-minimal edits if desired.
 
 - **For developers**
-
-  - The assistant’s governance relies heavily on **tool schema constraints** (absolute paths, single-occurrence edits, session-based bash control) and **procedural rules** (parallel calls, documentation-first). Changes to tool availability or schemas would materially alter the governance envelope even if safety rules remain constant.
-  - The policy-vs-model “final decision maker” difference implies that mode selection can be used to shift where compliance adjudication is expected to occur.
+  - The governance design suggests that safe operation depends heavily on tool constraints (path requirements, scoped search, PID-based termination). Integrations and UX should preserve these constraints to maintain the intended safety envelope.
+  - The documentation-first rule for capability questions implies that product behavior is intended to be anchored in a maintained reference source, not implicit model knowledge.
 
 - **For researchers studying agentic systems**
-  - This assistant exemplifies a pattern where “agentic” behavior (local execution and file modification) is bounded by **operational micro-rules** (search scope, process killing, minimal edits) rather than only high-level safety statements.
-  - The modes illustrate how governance can vary by **authority attribution** and **output-contract strictness** without changing the underlying toolset, enabling comparative study of responsibility allocation.
+  - This assistant demonstrates a pattern where **agentic capability is permitted (write access, tests, network tools)** but bounded by (i) strict prohibitions, (ii) procedural tool rules, and (iii) mode-level control of memory—highlighting memory as a governance primitive for limiting long-horizon behavior.
 
 ## 8. Limitations
 
-- Prompt-level analysis cannot determine actual enforcement strength, runtime monitoring, or whether “policy” versus “model” final authority corresponds to distinct technical control paths.
-- Network reachability and “third party” definitions remain ambiguous given the coexistence of local shell execution, GitHub MCP tools, and web search; the schemas do not fully specify data handling boundaries for each channel.
-- The normalized schemas do not provide concrete thresholds for “absolutely necessary” destructive actions or out-of-scope searches, leaving interpretive gaps in edge cases.
+- Prompt-level analysis cannot determine actual runtime enforcement, logging, or whether “memory” corresponds to durable storage versus short-lived context handling.
+- The schemas do not fully specify what qualifies as “sensitive data,” nor do they define a concrete redaction procedure; therefore, the practical boundary of “no third-party sharing” remains under-specified.
+- Network governance is only described at a high level (“limited” access; web/GitHub tools exist), without explicit endpoint allowlists or contextual rules for when external calls are permissible.
 
 ## 9. Conclusion
 
-Across interactive and prompt modes, copilot maintains a stable constitutional core: a concise, tool-mediated terminal engineering assistant governed by strict confidentiality, non-exfiltration, non-harm, non-infringement, and minimal-change principles, with validation-oriented correction norms. Mode variation is primarily expressed through **authority attribution** (policy-final in interactive versus model-final in prompt) and **output-contract shaping** (prompt mode encoding stricter formatting constraints). This reveals a design philosophy that treats modes as governance instruments for allocating responsibility and constraining interaction form, while keeping operational capabilities largely constant.
+Across `interactive` and `prompt` modes, copilot preserves a stable constitutional core: a software-engineering terminal assistant governed by policy supremacy, strict confidentiality and safety prohibitions, and tool-mediated action with minimal-change norms and regression-aware correction. The principal governance variation is **state retention** (memory on vs off) and secondarily **procedural emphasis** (intent-reporting cadence vs explicit parallelization). This reveals a design philosophy that manages risk and responsibility primarily by constraining how the assistant persists context and by routing autonomy through tightly specified tools and operational rules.

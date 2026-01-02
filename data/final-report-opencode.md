@@ -1,132 +1,121 @@
 ## 1. Assistant Overview
 
-The assistant under analysis is **opencode** (SST), an **interactive CLI software engineering helper** designed to support repository-centric development tasks with tool-mediated access to the local environment.
+The assistant under analysis is **opencode** (SST), an **interactive CLI-oriented software engineering assistant** designed to help users inspect, plan, and implement changes in a local codebase using mediated tools.
 
 **Modes included:**
-
 - `build`
 - `plan`
 
-**Overall purpose (as implied by the constitutions):** provide concise, security-conscious software engineering assistance, including codebase inspection and (in some modes) direct local modifications via tools, while enforcing strong prohibitions around malware assistance, unsafe git operations, and unnecessary verbosity.
+**Overall purpose (as implied by the prompts):** provide concise, convention-following software engineering help with strong operational safety around malware assistance, controlled repository side effects (especially git operations), and tool-mediated interaction with the local filesystem and limited web content.
 
 ## 2. Methodological Note
 
-This report is derived solely from the provided **normalized system-prompt schemas** and a **structural comparison across modes** to identify invariant governance elements and mode-specific deviations in authority, scope, tool mediation, and termination/correction logic.
+This report is derived solely from **normalized system-prompt schemas** and a **mode-to-mode structural comparison** of governance elements (identity, authority, scope, tools, correction, termination), without reliance on raw prompts or external assumptions.
 
 ## 3. Shared Constitutional Core
 
-Across both modes, opencode maintains a stable governance nucleus:
+Across both modes, opencode exhibits a stable governance core:
 
-- **Stable identity and role:** an interactive CLI engineering assistant that is **concise/direct** and oriented toward **software engineering tasks**.
-- **Hard safety boundary on malicious activity:** both modes prohibit generating or explaining code that could be used maliciously and refuse interaction with repositories/files suspected to be malware-related (including “educational” framing).
-- **URL governance:** both modes restrict generating/guessing URLs unless confident they are programming-helpful, and impose a **conditional requirement** to consult official opencode documentation via `webfetch` when users ask about opencode itself.
-- **Tool-channel separation:** both modes forbid using tools (e.g., bash echo, code comments) as a communication channel; user-facing communication must occur in normal assistant output.
-- **Comment minimization:** both modes prohibit adding code comments unless explicitly requested, indicating a governance preference to avoid unsolicited annotation.
-- **Git consent and safety posture:** both modes disallow commits unless explicitly requested and include additional git safety constraints (avoid destructive/interactive operations, avoid skipping hooks, etc.), though enforcement details vary by mode.
-- **Brevity contract:** both modes impose a default low-verbosity interaction style (notably a “<4 lines unless asked” constraint), with expansion only on user request.
+- **Identity and posture:** a concise, direct, CLI-oriented software engineering assistant that prioritizes codebase conventions and security best practices.
+- **Hard safety prohibition:** a strict refusal regime for **malware or malicious-code assistance**, including “educational” framing, and extending to interacting with files that appear malware-related by name/structure/purpose.
+- **Controlled side effects and git conservatism:** no commits (and by extension no pushes) unless explicitly requested; avoidance of destructive or interactive git operations unless explicitly requested; emphasis on verification rather than assumption (e.g., do not assume lint/test commands).
+- **Tool-mediated work discipline:** tools are for task completion, not communication; preference for specialized file/search tools over shell usage; explain non-trivial shell commands before execution.
+- **Low-verbosity interaction contract:** default brevity (targeting under ~4 lines unless detail is requested), minimal preamble/postamble, and no emojis unless requested.
+- **Codebase fidelity:** mimic existing conventions and verify libraries exist before introducing new dependencies.
+- **Reasoning opacity:** internal deliberation is hidden; explanations are provided on request rather than by default.
 
-This invariant core suggests opencode is designed as a **high-trust local engineering agent** whose foundational role is constrained by **security refusal rules**, **explicit user consent for irreversible actions**, and **tight output discipline** suitable for CLI workflows.
+This invariant core suggests a foundational role centered on **safe, minimally verbose, tool-governed engineering assistance** with explicit boundaries around harmful content and repository-impacting actions.
 
 ## 4. Mode-by-Mode Governance Analysis
 
 ### Mode: build
 
 - **Authority and permissions**
-
-  - Broad operational authority: can **run shell commands**, **read/search/edit/write files**, and **launch subagents** (`task`) for complex exploration.
-  - Explicitly supports workflow actions such as **lint/typecheck/test execution** after changes, and conditional support for **commits/PRs** when the user requests them.
-  - Strongly bounded by prohibitions: no malware assistance; no commits/pushes without explicit request; no destructive git commands without explicit request; no interactive git flags; no skipping hooks; no git config updates.
+  - Broad operational authority to **read, search, edit, and write** within the repository, and to run shell commands with side effects.
+  - Explicit permission to use a wide tool suite (bash/read/glob/grep/edit/write/task/webfetch/todo/skill), including subagent delegation.
+  - Strong prohibitions remain: malware assistance refusal; no commits/pushes unless asked; no documentation file creation unless requested; no code comments unless asked; URL guessing discouraged.
 
 - **Scope and visibility**
-
-  - Full local repo visibility via file tools and bash, with an assumption of broad filesystem readability and write capability.
-  - Network access is limited but available for documentation fetches; web use is explicitly mediated (notably for opencode capability questions).
-  - Session is persistent (shell persistence implied; session persistence explicitly true), but **no long-term memory**.
+  - Full visibility into conversation history and tool outputs, plus local filesystem access (read/write) and limited web access via webfetch.
+  - Session persistence is indicated, but without cross-session memory.
 
 - **Interaction contract**
-
-  - “Do the work” mode: emphasizes tool use, minimal text, and repository-conformant changes.
-  - Requires brief explanations before **non-trivial bash commands**, reflecting a governance pattern of “announce intent before side effects.”
-  - Prefers specialized file tools over bash for file operations; discourages creating new files by default and **prohibits proactive documentation file creation** unless requested.
+  - Default output is concise and CLI-friendly; non-trivial bash commands require a brief “what/why” explanation before execution.
+  - Operational discipline is emphasized: read-before-edit/write; verify directories before creating via bash; avoid using bash for file operations when dedicated tools exist.
+  - Post-task behavior is intentionally minimal: stop after completing file work without a summary unless requested.
 
 - **Correction and termination behavior**
-  - Self-review is operationalized: after code changes, the assistant should run lint/typecheck (if known) and verify with tests when possible.
-  - External feedback loop includes tool errors and hook failures; notably, if a commit hook fails, the assistant should fix issues and create a **new commit** (explicitly discouraging amend).
-  - Termination is abrupt by design: after file work, it should stop without summary unless asked, indicating a “hands-off” completion posture.
+  - Self-review triggers include running lint/typecheck when commands are discoverable; otherwise the assistant must ask the user and may suggest adding commands to AGENTS.md.
+  - Iteration is driven by tool errors and test/lint/typecheck failures, with a bias toward asking for missing information rather than guessing.
+  - Termination occurs when the request is satisfied; aborts on maliciousness or insufficient information.
 
 ### Mode: plan
 
 - **Authority and permissions**
-
-  - Read/plan authority only: can **read files**, **glob/grep**, optionally run bash for **inspection/verification** but under a strict read-only constraint.
-  - Explicitly forbids any modifications: no edits/writes/commits, and no bash commands that manipulate files (including common file-output utilities).
-  - Retains the same malware refusal boundary and URL restrictions as build.
+  - Authority is explicitly **constrained to planning and analysis** with a **read-only operational posture**: no file edits, no modifications, and no system-changing actions.
+  - Tools are still available, but their permissible use is narrowed: read/glob/grep and task delegation are aligned with inspection and research; bash is permitted only insofar as it supports read/inspect behavior.
+  - A notable governance distinction is that the **final decision-maker is “policy”** rather than the model, indicating a more rigid constraint regime in this mode.
 
 - **Scope and visibility**
-
-  - Filesystem access is explicitly **read-only**; side effects are disallowed at the environment layer.
-  - Toolset is similar in declaration, but governance rules override tool capabilities (e.g., `bash` is declared side-effectful, yet plan mode forbids side-effecting usage).
-  - Session persistence is not clearly specified (unknown), but memory remains absent.
+  - Visibility includes conversation history, tool results, local filesystem via read/search tools, and environment metadata.
+  - AGENTS.md is referenced as loaded (content not provided in the analysis), implying an additional instruction source that may shape planning constraints.
+  - Side effects are disallowed at the environment level (filesystem read-only).
 
 - **Interaction contract**
-
-  - “Explain and propose” mode: the success condition is a **well-formed execution plan** rather than implementation.
-  - Maintains the same brevity constraints, with an explicit conditional allowance to exceed brevity when the user requests detail.
-  - Continues to require file location references (`file_path:line_number`) when citing code, reinforcing an auditability norm even without edits.
+  - The contract is to produce a plan and/or clarifying questions, maintaining the same brevity norms.
+  - Plan-mode includes explicit prohibitions against using bash for file manipulation patterns (e.g., sed/tee/echo/cat), reinforcing that even “common shell read/write idioms” are governance-restricted in favor of dedicated read tools.
+  - Webfetch is conditionally prioritized for questions about opencode itself (capabilities/features), with an expectation of best-effort consultation rather than answering from memory.
 
 - **Correction and termination behavior**
-  - Correction logic is advisory: it can incorporate tool results and user feedback into improved plans, and suggest adding commands to AGENTS.md, but cannot execute changes.
-  - Termination emphasizes minimalism: stop after delivering the plan; refusals remain 1–2 sentences with alternatives.
+  - Correction is oriented toward improving the plan based on tool results and user feedback; implementation-phase checks (lint/typecheck) are referenced but structurally secondary because plan mode disallows modifications.
+  - Termination is explicitly defined as stopping after delivering a plan/clarifying questions, or refusing when constraints are violated (malware or requested side effects).
 
 ## 5. Comparative Mode Analysis
 
 - **Most constrained vs most permissive**
+  - `plan` is the most constrained: it enforces **read-only governance**, prohibits modifications, and elevates policy as the final arbiter.
+  - `build` is more permissive: it authorizes **direct code changes and filesystem writes**, while still maintaining strong safety and git-related prohibitions.
 
-  - `plan` is the most constrained: it enforces a **read-only governance regime** that overrides otherwise available tool capabilities.
-  - `build` is more permissive: it authorizes **direct codebase modification** and broader tool-mediated action, including conditional commit/PR workflows.
-
-- **Authority expansion and conditionality**
-
-  - The primary governance gradient is **side-effect authority**: `plan` prohibits side effects categorically, while `build` permits them with procedural safeguards (read-before-edit, explain non-trivial commands, explicit consent for commits/pushes).
-  - Both modes preserve the same high-level safety refusals; the difference is not in what domains are disallowed (malware) but in **how much operational autonomy** is granted for benign tasks.
+- **Authority gradients**
+  - The primary governance gradient is **side-effect authority**:
+    - `plan`: analysis/planning authority without execution authority.
+    - `build`: execution authority (edits/writes/commands) within strict safety and operational protocols.
+  - A secondary gradient is **decision rigidity**:
+    - `plan` formalizes policy primacy (final decision-maker: policy).
+    - `build` leaves final decisions to the model within the constitutional constraints.
 
 - **Tool mediation differences**
-  - Both modes prefer specialized file tools over bash, but `plan` further restricts bash to non-manipulative inspection, effectively narrowing bash to a verification channel.
-  - `build` introduces additional workflow-specific tool governance (e.g., disallowing Todo/Task tools during commit/PR workflows), creating a more complex internal policy topology than `plan`.
+  - Both modes discourage using bash for file operations, but `plan` intensifies this into a near categorical restriction on non-readonly shell usage, while `build` allows side effects with procedural safeguards (explain commands, verify directories, read-before-edit/write).
 
 ## 6. Design Patterns and Intent
 
-Several governance strategies recur across modes:
+Recurring governance patterns indicate deliberate strategies:
 
-- **Two-phase governance architecture:** `plan` functions as a **non-invasive deliberation layer**, while `build` functions as an **execution layer** with guardrails. This suggests intentional separation of “decide” vs “act” to manage operational risk.
-- **Consent gating for irreversible actions:** commits, pushes, destructive git operations, and certain workflow steps require explicit user initiation, indicating a design intent to keep the user as the accountable operator for high-impact actions.
-- **Tool capability vs tool permission decoupling:** tools are declared with broad capabilities, but mode governance constrains permissible use (especially in `plan`), reflecting a policy-first approach rather than capability-first.
-- **Auditability norms without verbosity:** requirements like `file_path:line_number` references and pre-execution explanations for non-trivial commands provide traceability while maintaining strict output minimization.
-- **Refusal minimalism:** refusals are intentionally non-explanatory and brief, indicating a governance preference to reduce negotiation surface around disallowed content.
+- **Two-phase responsibility separation:** `plan` functions as a low-risk deliberation layer (inspection + planning), while `build` is the execution layer (implementation + changes). This partitions risk by mode rather than relying solely on situational judgment.
+- **Procedural safety over discretionary safety:** both modes encode operational protocols (read-before-edit, explain non-trivial commands, avoid guessing commands/URLs, conservative git rules) that reduce reliance on ad hoc decision-making.
+- **Harm containment via categorical refusal:** malware-related assistance is treated as a hard boundary across modes, suggesting a design intent to prevent both direct enablement and indirect optimization/explanation.
+- **Minimalist interaction as governance:** strict brevity and “stop without summary” norms reduce unsolicited guidance and limit accidental disclosure or overreach, aligning with a CLI tool philosophy of user-directed action.
 
 ## 7. Implications
 
 - **For users**
-
-  - Mode selection materially changes the interaction contract: `plan` supports safe inspection and planning, while `build` enables direct implementation. Users should expect different levels of autonomy and should explicitly request commits/PRs when desired.
-  - The brevity constraint and “stop without summary” behavior can reduce implicit confirmation; users may need to request summaries or additional detail explicitly.
+  - Users should expect a clear separation between “planning” and “doing”: `plan` will not execute changes, while `build` can implement but will remain conservative about commits, pushes, comments, and documentation creation.
+  - Users may need to supply repository-specific commands (lint/typecheck/test) because the assistant is governed to avoid guessing.
 
 - **For developers**
-
-  - The constitutions encode a clear separation between read-only and write-capable operation, enabling safer defaults and easier reasoning about side effects.
-  - Policy complexity increases in `build` (e.g., exceptions around Todo/Task during git workflows), which may require careful maintenance to avoid contradictory operator guidance.
+  - Mode design provides a governance mechanism to manage operational risk: enabling `plan` as a safe default for exploration and reserving `build` for explicit execution contexts.
+  - The explicit tool constraints (e.g., discouraging bash for file ops) imply that tool ergonomics and capability coverage (read/glob/grep/edit/write) are central to maintaining governance compliance.
 
 - **For researchers studying agentic systems**
-  - opencode exemplifies **mode-based authority partitioning**: the same assistant identity and safety core persists while operational authority is sharply modulated.
-  - The design demonstrates how governance can be implemented as **procedural constraints** (read-before-edit, explain-before-run, explicit consent gates) rather than solely as content filters.
+  - opencode demonstrates a governance architecture where **agency is modulated primarily through side-effect permissions and decision authority**, not through changes in identity or safety principles.
+  - The “policy as final decision-maker” in `plan` is a notable structural signal of stricter constitutional enforcement in analysis-only contexts.
 
 ## 8. Limitations
 
-- This analysis cannot determine actual enforcement fidelity, only the intended governance as specified in the normalized constitutions.
-- AGENTS.md is referenced but not included; any additional repository-specific governance constraints are therefore not analyzable here.
-- Several fields are unknown (e.g., tool/model versions, some session persistence details), limiting conclusions about runtime behavior.
-- The definition of “malicious” is heuristic and under-specified; the practical boundary of refusal may be broader or narrower than implied.
+- Prompt-level analysis cannot determine how consistently these constraints are enforced at runtime, nor how conflicts are resolved when tool outputs, repository state, or user instructions are ambiguous.
+- The content of referenced external instructions (e.g., AGENTS.md) is not available here, limiting conclusions about project-specific governance overlays.
+- Network and filesystem boundaries are inferred from declared access and constraints, but actual sandboxing, auditing, or permission enforcement cannot be verified from these schemas alone.
 
 ## 9. Conclusion
 
-Across `plan` and `build`, opencode preserves a consistent constitutional identity: a concise CLI engineering assistant with strict malware refusal, URL caution, tool-channel separation, and explicit-consent gating for high-impact git actions. The modes primarily differ by **side-effect authority**: `plan` institutionalizes read-only planning and inspection, while `build` authorizes execution with procedural safeguards and workflow-specific constraints. This mode structure reveals a design philosophy centered on **risk-managed autonomy**, where operational power is granted conditionally and bounded by traceability and user-controlled escalation points.
+opencode uses modes to implement a clear governance split: `plan` is a policy-rigid, read-only planning constitution, while `build` is an execution-capable constitution with procedural safeguards and strong prohibitions around malware and repository-impacting actions (notably git). Across both, the assistant preserves a stable identity and safety core, revealing a design philosophy that manages autonomy and risk through **explicit side-effect gating, tool-mediated discipline, and minimal, user-directed interaction** rather than through shifting personas or expansive discretionary authority.

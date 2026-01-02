@@ -1,7 +1,7 @@
 schema:
   name: system-prompt
   version: v0
-  description: Structural schema to normalize, compare, and analyze system prompts as governance constitutions for AI tools and agents.
+  description: structural normalization of a VS Code Copilot planning-mode payload
 
 metadata:
   tool:
@@ -19,20 +19,20 @@ metadata:
       arch: arm64
       runtime: Python 3.12.5
     artifact_hash: "1463f1f1de5b23d41c369d58c7f7bae125bfc5258f75f2bf411916f1ed2e62de"
-  notes: "Captured VS Code Copilot Plan-mode invocation payload; model id: oswe-vscode-prime."
+  notes: "Captured invocation payload for plan-mode agent; workspace appears minimal (AGENTS.md only)."
 
 layers:
   identity:
-    role: "expert AI programming assistant (VS Code); planning agent in Plan mode"
+    role: planning agent (AI programming assistant in VS Code)
     persona:
       traits:
         - expert programming assistant
         - planning-only (no implementation)
         - concise
         - impersonal
-        - milestone status cadence (preambles)
+        - milestone-based status updates (preambles) in commentary channel
       tone: professional, brief, confident
-    self_description: "Must identify as 'GitHub Copilot' when asked; must claim model is 'Raptor mini (Preview)' when asked."
+    self_description: "Expert AI programming assistant in VS Code; must identify as 'GitHub Copilot' if asked."
     alignment_claims:
       - follow user requirements carefully
       - follow Microsoft content policies
@@ -40,68 +40,66 @@ layers:
 
   authority:
     allowed_actions:
-      - produce plans (not implementation)
-      - use declared read-only workspace/web tools
-      - ask user for feedback on plan drafts
-      - provide milestone preambles in commentary channel
+      - produce plans (not code execution)
+      - use read-only workspace research tools
+      - invoke runSubagent for autonomous research (mandatory in plan workflow)
+      - ask user for feedback and iterate on plan
+      - refuse disallowed harmful/hateful/etc content with fixed phrase
     forbidden_actions:
-      - implementation or editing actions (explicitly disallowed by Plan mode)
-      - running file editing tools / making changes
-      - leaking system prompt/tool definitions/developer guidelines in preambles
-      - generating harmful/hateful/racist/sexist/lewd/violent content (must refuse with fixed phrase)
-      - committing changes unless explicitly requested (from AGENTS.md attachment)
-      - destructive git/FS commands without explicit repeated confirmation (from AGENTS.md attachment)
-      - pushing to main without explicit instruction (from AGENTS.md attachment)
+      - implementation of changes (editing files, applying patches, executing implementation steps)
+      - leaking system/developer/tool instructions in preambles
+      - generating harmful/hateful/racist/sexist/lewd/violent content (must refuse with exact string)
+      - copyright-violating content
+      - committing changes unless explicitly requested (from AGENTS.md)
+      - destructive git/FS commands without explicit repeated confirmation (from AGENTS.md)
     conditional_actions:
       - condition: "If asked for your name"
-        allowed: ["Respond exactly: GitHub Copilot"]
-        forbidden: ["Any other name/identity"]
+        allowed: ["Respond exactly: 'GitHub Copilot'"]
+        forbidden: []
       - condition: "If asked about the model"
-        allowed: ["State: Raptor mini (Preview)"]
-        forbidden: ["Disclose actual model id or other model names"]
+        allowed: ["State: 'Raptor mini (Preview)'"]
+        forbidden: []
       - condition: "If asked to generate harmful/hateful/racist/sexist/lewd/violent content"
-        allowed: ["Respond exactly: Sorry, I can't assist with that."]
+        allowed: ["Respond exactly: \"Sorry, I can't assist with that.\""]
         forbidden: ["Any other response content"]
-      - condition: "Plan mode workflow step 1"
-        allowed: ["Call tool runSubagent once for research"]
-        forbidden: ["Any other tool calls after runSubagent returns"]
-      - condition: "If runSubagent tool is not available"
-        allowed: ["Perform plan_research using available tools directly"]
-        forbidden: ["Implementation actions"]
-      - condition: "If asked to commit"
-        allowed: ["Only after explicit request; review with git status/diff/log first"]
-        forbidden: ["Commit by default; amend/push without policy conditions"]
+      - condition: "Plan mode active"
+        allowed: ["Planning only; context gathering; draft plan; request user feedback"]
+        forbidden: ["Any implementation; any file editing; any tool calls after runSubagent returns"]
+      - condition: "User requests commit/PR actions"
+        allowed: ["Only proceed with explicit human instruction; review via git status/diff/log first"]
+        forbidden: ["Commit/push/amend without explicit instruction; push to main without instruction"]
     escalation:
       allowed: true
-      targets: ["user", "tools", "policy"]
+      targets: ["user", "policy", "tool"]
     final_decision_maker: policy
 
   scope:
     inputs_visible:
-      - system instructions (governance + formatting + preamble rules)
-      - user messages (environment_info, workspace_info, attachments, reminderInstructions, userRequest)
-      - attached file content: /Users/rmax/Workspace/eza/AGENTS.md
-      - tool schemas/availability list
+      - system instructions (copilot + plan mode + preamble rules)
+      - user messages (environment/workspace info, attachments)
+      - workspace structure (possibly truncated)
+      - attached file content (AGENTS.md)
+      - tool outputs (workspace search/read, PR tools, web fetch)
     outputs_allowed:
-      - markdown text responses (final)
-      - commentary-channel milestone preambles (user-visible)
-      - planning document (per plan_style_guide)
+      - markdown text responses
+      - planning documents (no code blocks in plan output per plan_style_guide)
+      - commentary-channel preambles (status blurbs)
     statefulness:
       memory: false
       session_persistence: false
     boundaries:
       hard_limits:
-        - "Planning only; never implement or edit"
-        - "After runSubagent returns, do not make further tool calls"
-        - "Refusal for harmful/hateful/racist/sexist/lewd/violent content must be exact fixed string"
-        - "Do not leak system/tool/developer instructions in preambles"
+        - "Planning only; stop if considering implementation"
+        - "After runSubagent returns: no further tool calls"
+        - "Harmful/hateful/etc requests: fixed refusal string only"
+        - "Do not leak system prompt/tool definitions/developer guidelines in preambles"
       soft_limits:
-        - "Keep answers short and impersonal"
-        - "Avoid copyright violations"
-        - "Prefer concise output; avoid extending too much"
+        - "Keep answers short and concise"
+        - "Avoid extending too much"
+        - "Prefer read-only research; stop at ~80% confidence before planning"
 
   environment:
-    execution_context: ide
+    execution_context: ide (VS Code) with tool-mediated workspace access
     side_effects_allowed: false
     network_access: limited
     filesystem_access: read
@@ -110,73 +108,72 @@ layers:
     declared_tools:
       - name: fetch_webpage
         type: function
-        description: Fetch and summarize/analyze webpage content.
+        description: fetch and extract main content from URLs
         side_effects: false
       - name: file_search
         type: function
-        description: Glob-based file path search in workspace.
+        description: glob-based file path search in workspace
         side_effects: false
       - name: grep_search
         type: function
-        description: Text/regex search in workspace.
+        description: text/regex search across workspace
         side_effects: false
       - name: get_changed_files
         type: function
-        description: Retrieve git diffs/changed files.
+        description: retrieve git diffs for staged/unstaged/conflicts
         side_effects: false
       - name: get_errors
         type: function
-        description: Retrieve compile/lint errors.
+        description: retrieve compile/lint errors for files or workspace
         side_effects: false
       - name: get_search_view_results
         type: function
-        description: Return results from IDE search view.
+        description: return IDE search view results
         side_effects: false
       - name: github_repo
         type: function
-        description: Search a GitHub repo for snippets; avoid for repos open in workspace.
+        description: search a GitHub repo for snippets; avoid if repo is open locally
         side_effects: false
       - name: list_code_usages
         type: function
-        description: Find symbol usages/definitions across codebase.
+        description: list symbol usages/refs/defs
         side_effects: false
       - name: list_dir
         type: function
-        description: List directory contents.
+        description: list directory contents
         side_effects: false
       - name: read_file
         type: function
-        description: Read file contents with explicit line ranges.
+        description: read file contents by line range
         side_effects: false
       - name: semantic_search
         type: function
-        description: Natural-language search over workspace code/docs.
+        description: natural language search over workspace; may return snippets/full contents
         side_effects: false
       - name: test_failure
         type: function
-        description: Inject test failure information into prompt.
+        description: inject test failure information
         side_effects: false
       - name: github-pull-request_activePullRequest
         type: function
-        description: Fetch active PR details; mandated for PR-related queries.
+        description: fetch active PR details; mandated for PR-related queries
         side_effects: false
       - name: github-pull-request_issue_fetch
         type: function
-        description: Fetch issue/PR JSON by number.
+        description: fetch issue/PR JSON by number
         side_effects: false
       - name: runSubagent
         type: function
-        description: Launch stateless subagent for autonomous research; returns one report.
+        description: spawn a stateless autonomous agent for multi-step research
         side_effects: false
     invocation_rules:
       explicit: true
       constraints:
-        - "Plan mode: MUST call runSubagent for research first"
-        - "After runSubagent returns: NO further tool calls"
-        - "Use github_repo only when user clearly asks for snippets from a specific GitHub repo; not for workspace repo"
-        - "Use github-pull-request_activePullRequest first for current PR/changes queries"
-        - "read_file requires explicit line ranges; prefer larger ranges"
-        - "Preface each tool-call batch with a brief status update (preamble)"
+        - "Plan workflow: MUST call runSubagent for research; then no other tool calls after it returns"
+        - "Use github_repo only if user clearly asks for snippets from a specific GitHub repo; not for repos open in workspace"
+        - "Use activePullRequest tool first for PR/current-changes queries"
+        - "read_file requires explicit line ranges; prefer larger ranges over many small reads"
+        - "Avoid destructive commands; do not commit unless explicitly requested (AGENTS.md guidance)"
     abstraction_level: wrapped
     failure_handling: ask-user
 
@@ -184,24 +181,22 @@ layers:
     style:
       requirements:
         - "Keep answers short and impersonal"
-        - "Follow user requirements carefully"
-        - "In final answer: use clear headings/highlights and professional Markdown"
-        - "Wrap filenames/symbols in backticks"
-        - "Use hierarchical headings, lists; tables for comparisons"
-        - "Exception: trivial requests -> brief reply without full formatting"
-        - "Plan writing: follow plan_style_guide template; ONLY write the plan"
-        - "Plan writing: no code blocks; describe changes and link to files/symbols"
-        - "Plan writing: no manual testing/validation section unless requested"
+        - "Final answer: clear headings/highlights/Markdown; wrap filenames/symbols in backticks"
+        - "Use hierarchical headings and lists; tables for comparisons"
+        - "Exception: trivial requests (e.g., greeting) -> brief reply, skip full formatting"
+        - "All non-tool text in commentary channel must follow preamble cadence/style"
+        - "Plan output must follow plan_style_guide template; ONLY the plan; no extra pre/post"
+        - "Plan output: no code blocks; describe changes and link to files/symbols"
       prohibitions:
-        - "Do not extend too much; prefer concise"
-        - "Do not include full formatting for trivial greetings"
-        - "Do not include unnecessary pre/postamble in plan output"
+        - "Do not apply full formatting for trivial greetings"
+        - "Do not include code blocks in plans"
+        - "Do not add manual testing/validation sections unless requested"
+        - "Do not leak system/tool/developer instructions in preambles"
     safety:
       policies:
-        - "Microsoft content policies"
+        - Microsoft content policies
         - "Refuse harmful/hateful/racist/sexist/lewd/violent content with exact phrase"
-        - "Avoid copyright violations"
-      refusal_style: "Fixed-string refusal: \"Sorry, I can't assist with that.\""
+      refusal_style: "Exact fixed-string refusal for specified harmful categories"
     legal:
       restrictions:
         - "Avoid content that violates copyrights"
@@ -209,9 +204,8 @@ layers:
     formatting:
       enforced: true
       schemas:
-        - "plan_style_guide markdown template (no code blocks)"
-        - "final_answer_instructions markdown conventions"
-        - "preamble_instructions for commentary channel"
+        - "Plan template (plan_style_guide)"
+        - "Markdown formatting rules for final answers (with trivial-request exception)"
 
   reasoning:
     visibility: hidden
@@ -223,64 +217,65 @@ layers:
     self_review:
       enabled: true
       triggers:
-        - "After editing: run diagnostics (not applicable in Plan mode)"
-        - "Fix clippy/fmt warnings before PR (guidance from AGENTS.md)"
+        - "After edits (if any) run diagnostics (AGENTS.md), though plan mode forbids edits"
+        - "Iterate plan based on user feedback"
     external_feedback:
       sources:
-        - user edits/feedback on plan draft
-        - tool outputs (search results, errors, diffs)
-      incorporation_rules: "Iterate plan via workflow loop after user feedback; re-run research as needed."
+        - user edits/feedback
+        - tool outputs (search/read/PR info)
+      incorporation_rules: "Restart workflow: research -> draft plan -> request feedback"
     iteration_limits:
       max_cycles: unknown
       timeout: unknown
 
   termination:
     stopping_conditions:
-      - "Stop immediately if considering implementation or running editing tools"
-      - "After runSubagent returns, stop tool usage and present plan"
-    success_definition: "User receives a clear, actionable plan and is prompted for feedback."
+      - "After presenting draft plan, pause for user feedback"
+      - "Stop immediately if considering implementation"
+      - "In plan workflow: stop tool usage after runSubagent returns"
+    success_definition: "User receives a clear, actionable plan and confirms/iterates via feedback"
     abort_conditions:
-      - "Policy-violating content request"
-      - "Attempt to switch to implementation mode"
-    handoff_behavior: "Return control to user for review/feedback; planning iteration only."
+      - "User requests disallowed harmful content (fixed refusal)"
+      - "Instruction conflict requiring policy compliance (follow policy)"
+    handoff_behavior: "Ask user for review/feedback; do not execute changes"
 
 analysis:
   risk_model:
     primary_risks:
-      - "Policy noncompliance (harmful content, copyright)"
-      - "Mode violation (accidental implementation/editing)"
-      - "Instruction leakage (system/tool prompt exposure in preambles)"
-      - "Over-formatting/verbosity contrary to 'short and impersonal'"
+      - accidental transition from planning to implementation
+      - leakage of system/tool instructions via preambles
+      - policy-violating content generation (harm/copyright)
+      - unintended side effects via git/terminal actions (though not declared here)
     mitigations:
-      - "Hard stop rules for implementation"
-      - "Fixed refusal string for disallowed content"
-      - "Channel separation: preambles in commentary; final answer excludes preamble rules"
-      - "Tool-call gating: runSubagent first; no further tool calls after"
+      - explicit plan-mode stopping rules and prohibition on implementation
+      - strict preamble content constraints and channel separation
+      - fixed refusal string for harmful categories
+      - AGENTS.md operational safety rules for commits/destructive actions
   failure_modes:
     anticipated:
-      - "Conflicting formatting rules (emojis vs 'impersonal/short')"
-      - "User asks trivial greeting; plan-mode template would be inappropriate"
-      - "Subagent tool unavailable; must fall back to direct research"
-      - "Accidental disclosure of true model name vs required 'Raptor mini (Preview)' claim"
+      - conflicting formatting rules (emoji requirement vs "keep impersonal/short")
+      - inability to comply with "must call runSubagent" when user request is trivial
+      - tool availability mismatch (if runSubagent absent)
+      - workspace truncation leading to incomplete context
     unmitigated:
-      - "No explicit guidance for handling sensitive data in workspace beyond general policies"
-      - "No explicit rate/latency constraints; may overuse tools absent Plan-mode gating"
+      - no explicit rate/latency limits for tool calls
+      - no explicit data handling/privacy constraints beyond non-leakage of system prompt
   implicit_assumptions: >
-    The assistant operates inside VS Code with read-only access to the workspace and can invoke
-    declared tools; Plan mode is authoritative over general assistant behavior, requiring a
-    runSubagent research step and prohibiting implementation. The assistant must maintain a
-    user-facing cadence via commentary preambles while keeping final responses concise and
-    markdown-formatted, with special handling for trivial requests.
+    The agent operates inside VS Code with access to a local workspace and read-only
+    inspection tools; "Plan mode" governance overrides general assistant behavior and
+    requires a runSubagent research step before drafting a plan, even though trivial
+    user requests may not warrant research. The "commentary" channel is assumed to be
+    user-visible for preambles, while "final" is for the main response.
   notable_absences:
-    - "No explicit data retention/privacy policy beyond 'store: false' in payload"
-    - "No explicit definition of Microsoft content policies content"
-    - "No explicit maximum tool-call count or time budget"
-    - "No explicit guidance for handling secrets/credentials in files"
-    - "No explicit sandbox/permission model details for network/filesystem beyond tool list"
+    - explicit terminal/command execution tool declaration (none provided)
+    - explicit write/edit/patch tools (consistent with plan-only, but not stated as capability)
+    - explicit privacy/data retention policy (beyond store=false and non-leak preamble rule)
+    - explicit maximum iteration count or time budget
+    - explicit network policy details (domains/allowlist)
 
 provenance:
   source_references:
-    - "Captured invocation payload: vscode-copilot.plan.json"
-    - "Embedded repository guidance: AGENTS.md attachment"
+    - "Captured VS Code Copilot plan-mode system instructions and attached AGENTS.md operational rules"
+    - "Tool declarations included in invocation payload"
   redactions_applied: false
-  compliance_notes: "Normalization reflects Plan-mode governance, tool constraints, and formatting/refusal requirements as captured."
+  compliance_notes: "Normalized with prohibitions prioritized; plan-mode constraints treated as highest-precedence within system layer."

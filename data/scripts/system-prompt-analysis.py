@@ -39,8 +39,9 @@ from openai.types.chat import ChatCompletionMessageParam
 def read_text(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
-    except Exception as e:
-        sys.exit(f"Failed to read {path}: {e}")
+    except Exception:
+        logging.exception(f"Failed to read {path}")
+        sys.exit(1)
 
 
 def clean_output(text: str) -> str:
@@ -60,16 +61,17 @@ def validate_yaml(text: str, schema_yaml: str) -> None:
     """Validate that the text is valid YAML and matches the basic schema structure."""
     try:
         data = yaml.safe_load(text)
-    except yaml.YAMLError as e:
-        sys.exit(f"Output is not valid YAML: {e}")
+    except yaml.YAMLError:
+        logging.exception("Output is not valid YAML")
+        sys.exit(1)
 
     if not isinstance(data, dict):
         sys.exit("Output YAML must be a dictionary at the top level")
 
     try:
         schema = yaml.safe_load(schema_yaml)
-    except yaml.YAMLError as e:
-        logging.warning(f"Failed to parse schema for validation: {e}")
+    except yaml.YAMLError:
+        logging.exception("Failed to parse schema for validation")
         return
 
     # Basic structural check: ensure major sections from schema exist in data
@@ -93,6 +95,9 @@ def main() -> None:
     parser.add_argument("--schema", required=True, help="Normalization schema (YAML)")
     parser.add_argument("--invocation", required=True, help="Invocation payload (JSON)")
     parser.add_argument("--model", required=True, help="Model name (e.g. gpt-5.2)")
+    parser.add_argument(
+        "--seed", type=int, help="Seed for deterministic inference (optional)"
+    )
     parser.add_argument(
         "--output", help="Output file path (optional, prints to stdout if omitted)"
     )
@@ -133,8 +138,9 @@ def main() -> None:
     # Validate JSON early
     try:
         json.loads(invocation_json)
-    except json.JSONDecodeError as e:
-        sys.exit(f"Invalid JSON in invocation payload: {e}")
+    except json.JSONDecodeError:
+        logging.exception("Invalid JSON in invocation payload")
+        sys.exit(1)
 
     # Calculate capture metadata
     file_stat = invocation_path.stat()
@@ -192,6 +198,8 @@ def main() -> None:
     if args.dry_run:
         print("Dry run mode enabled. The following request would be sent to the model:")
         print(f"Model: {args.model}")
+        if args.seed is not None:
+            print(f"Seed: {args.seed}")
         print("Messages:")
         print(json.dumps(messages, indent=2, ensure_ascii=False))
         # Also print invocation and schema for convenience
@@ -213,11 +221,13 @@ def main() -> None:
         response = client.chat.completions.create(
             model=args.model,
             messages=messages,
-            # Tempoerature 0 is supported by all GPT-4 and GPT-5 models (except mini variants)
+            # Temperature 0 is supported by all GPT-4 and GPT-5 models (except mini variants)
             temperature=0,
+            seed=args.seed,
         )
-    except Exception as e:
-        sys.exit(f"API call failed: {e}")
+    except Exception:
+        logging.exception("API call failed")
+        sys.exit(1)
 
     # Print ONLY the model output
     output = response.choices[0].message.content
@@ -236,8 +246,9 @@ def main() -> None:
             logging.debug(f"Writing output to {output_path}")
             output_path.write_text(output, encoding="utf-8")
             print(f"Analysis saved to {output_path}")
-        except Exception as e:
-            sys.exit(f"Failed to write output to {output_path}: {e}")
+        except Exception:
+            logging.exception(f"Failed to write output to {output_path}")
+            sys.exit(1)
     else:
         print(output)
 

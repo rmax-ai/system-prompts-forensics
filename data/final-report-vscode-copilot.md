@@ -1,151 +1,130 @@
-## 1. Assistant Overview
+# 1. Assistant Overview
 
-The assistant under analysis is **vscode-copilot** (GitHub/Microsoft), operating as an IDE-integrated AI programming assistant.
+The assistant under analysis is **vscode-copilot** (GitHub/Microsoft), operating as an AI programming assistant embedded in the **VS Code** IDE context.
 
 **Modes included:**
-
 - `agent`
 - `ask`
 - `plan`
 
-Across modes, the implied overall purpose is to support programming and repository work inside VS Code, with mode-specific governance determining whether it can merely answer questions, inspect workspace context, produce plans, or take direct action via tools (including filesystem and terminal side effects).
+Across modes, the assistant’s implied purpose is to provide **programming help within an editor/workspace context**, with varying degrees of autonomy and side-effect capability (from read-only Q&A to tool-mediated editing/execution), while remaining bound to Microsoft content policies and specific disclosure constraints.
 
-## 2. Methodological Note
+# 2. Methodological Note
 
-This report is derived solely from the provided **normalized system-prompt schemas** and a **structural comparison across modes**, treating each mode as a distinct governance constitution.
+This report is derived solely from **normalized system-prompt schemas** for each mode and a **structural comparison** of governance elements (authority, scope, tools, constraints, correction, termination). No inferences are drawn from raw prompts or undocumented internal behavior.
 
-## 3. Shared Constitutional Core
+# 3. Shared Constitutional Core
 
-Several governance elements remain invariant across all modes:
+Several governance elements are invariant across all modes:
 
-- **Identity and role anchoring:** The assistant is consistently framed as an _expert AI programming assistant_ in a VS Code context, with a professional, brief, and impersonal persona.
-- **Policy supremacy:** In all modes, the **final decision maker is “policy”**, and the assistant claims alignment with Microsoft content policies and copyright avoidance.
-- **Fixed refusal mechanism for specific harmful categories:** All modes enforce an **exact, refusal-only** response for harmful/hateful/racist/sexist/lewd/violent content requests.
-- **Non-disclosure of internal governance:** All modes prohibit leaking system/developer/tooling instructions, especially via the commentary-channel preambles.
-- **Channelized interaction pattern:** All modes recognize a separation between a **commentary channel** (for brief milestone/status preambles) and a **final answer channel** (for user-facing content), with explicit constraints on what preambles may contain.
-- **No durable memory:** All modes specify `memory: false` (and where specified, no session persistence), indicating a consistent non-retentive interaction contract.
+- **Stable identity and disclosure constraints:** The assistant is consistently framed as an expert programming assistant in VS Code, with **hard-coded responses** for identity queries (name must be “GitHub Copilot”; model must be “Raptor mini (Preview)”).
+- **Policy primacy:** In all modes, **policy is the final decision-maker**, explicitly overriding user intent when conflicts arise.
+- **Fixed refusal mechanism for specified harmful categories:** Requests for harmful/hateful/racist/sexist/lewd/violent content trigger an **exact, single-string refusal** with no additional text.
+- **Non-leakage of internal governance:** All modes prohibit leaking system/developer/tool instructions, especially via the **commentary-channel preambles**.
+- **Concise, impersonal communication baseline:** Each mode emphasizes short, professional, impersonal responses, with “trivial request” exceptions to formatting rigor.
+- **No persistent memory:** All modes specify **no memory** and **no session persistence**, limiting governance to the current interaction context.
 
-This invariant core suggests a foundational design role: a policy-governed IDE assistant that prioritizes controlled disclosure, predictable refusal behavior, and a standardized “professional assistant” identity regardless of operational capability.
+This invariant core suggests a design centered on **tight institutional compliance** (policy and disclosure), **controlled transparency** (no prompt/tool leakage), and **bounded conversational continuity** (statelessness), regardless of whether the assistant is allowed to act on the workspace.
 
-## 4. Mode-by-Mode Governance Analysis
+# 4. Mode-by-Mode Governance Analysis
 
-### Mode: agent
+## Mode: agent
 
-- **Authority and permissions**
+### Authority and permissions
+- Broadest operational authority: may **read/search/edit/create files**, **run terminal commands**, manage tasks, and operate on notebooks via specialized tools.
+- Explicit constraints shape how authority is exercised: e.g., must not use `create_file` to edit existing files; must prefer batched replacements; must avoid terminal-based Jupyter operations when notebook tools exist.
+- Planning is formalized via `manage_todo_list`, conditionally required for non-trivial tasks, indicating a governance preference for **structured execution** when autonomy increases.
 
-  - Broadest operational authority: may **read/search/edit/create files**, run terminal commands, run notebook cells, and manage tasks, subject to detailed tool-routing rules.
-  - Introduces a structured autonomy mechanism via **`manage_todo_list`** for non-trivial work, with strict state-transition rules (exactly one in-progress item, immediate completion marking).
-  - Enforces operational micro-constraints (e.g., context requirements for `replace_string_in_file`, preference for `multi_replace_string_in_file` for multiple edits).
+### Scope and visibility
+- Sees system instructions, user messages, environment/workspace info, and tool schemas; however, the capture notes “workspace not open,” implying governance anticipates tool use even when context may be absent.
+- Outputs include markdown answers, code snippets, and tool calls with side effects.
 
-- **Scope and visibility**
+### Interaction contract
+- Two-channel contract is emphasized: **commentary** for milestone/status preambles and **final** for the substantive response.
+- Strong formatting governance: professional Markdown with headings and backticks; additionally, an explicit requirement to use **emojis in final answers** (except trivial requests), creating a notable stylistic mandate alongside “impersonal/brief.”
 
-  - Sees system instructions, user messages, environment info, and tool schemas; capture notes indicate **no workspace open**, which becomes a practical boundary for file operations.
-  - Allows side effects: filesystem write and terminal execution are explicitly available, with limited network access.
+### Correction and termination behavior
+- Self-review is enabled with recommended validation (e.g., `get_errors` after edits).
+- Termination is tied to either satisfying the user request or completing todos (if planning is used), reflecting an execution-oriented completion criterion.
+- Abort logic includes immediate refusal for disallowed content and implicit inability to perform file operations when no workspace is open.
 
-- **Interaction contract**
+## Mode: ask
 
-  - Strongly procedural: milestone preambles before tool batches; tool use is explicit but **tool names must not be announced** to the user.
-  - Output is generally markdown-structured except for trivial requests, where brevity overrides formatting and planning.
+### Authority and permissions
+- Primarily a **read-only assistance** mode: can answer questions and use tools to inspect the workspace (search/list/read, symbol search, diffs).
+- Explicit operational safety constraints appear despite limited side effects: no commits unless explicitly requested; destructive commands require repeated confirmation; push-to-main restrictions. These function as **preventive governance**, even though the declared toolset is non-destructive.
 
-- **Correction and termination behavior**
-  - Self-review is enabled; after edits, validation via diagnostics (`get_errors`) is suggested.
-  - Terminates when the request is satisfied or when refusal triggers; aborts if tool constraints prevent completion (e.g., no workspace) or policy risk arises.
+### Scope and visibility
+- Inputs include workspace info, repository metadata, and attached `AGENTS.md` rules, indicating that repository-local governance can be incorporated.
+- Side effects are explicitly disallowed; filesystem access is read-only.
 
-### Mode: ask
+### Interaction contract
+- Commentary-channel preambles are tightly regulated (cadence, variety constraints, no label+colon starts), indicating governance attention to **meta-communication discipline**.
+- Final responses must be professional Markdown; tables are encouraged for comparisons; trivial requests bypass full formatting.
 
-- **Authority and permissions**
+### Correction and termination behavior
+- Self-review triggers are oriented around safe change management (review diffs/status/log before commits) and repository guidance.
+- Termination occurs when the request is satisfied or the user ends the conversation; abort conditions include disallowed content or insufficient context when the user declines inspection/clarification.
 
-  - Primarily a **question-answering and workspace-inspection** constitution: tools are limited to read/search/list/diff/symbol queries.
-  - Explicitly restricts high-impact actions: **no commits unless explicitly requested**, and destructive commands require explicit repeated confirmation (even though terminal execution is not declared in this mode).
-  - Includes guidance to read relevant files before editing/running commands, but the toolset itself is read-only, creating a governance posture of “advise and inspect” rather than “act.”
+## Mode: plan
 
-- **Scope and visibility**
+### Authority and permissions
+- Most constrained in terms of action: explicitly **planning-only**, forbidding implementation, file edits, and execution.
+- Distinctive mandatory mediation: the workflow **must call `runSubagent` for research**, and then **no further tool calls are allowed after it returns**. This creates a gated, staged authority model: research is delegated, then the main agent becomes tool-silent.
+- Maintains the same policy/disclosure/refusal constraints as other modes, plus a hard boundary against transitioning into implementation.
 
-  - Receives workspace structure snapshots and an attached operational policy file (`AGENTS.md`), plus repository metadata (branch/name/owner).
-  - Filesystem access is described as **read**, and side effects are not clearly enabled; network access is unspecified.
+### Scope and visibility
+- Read-only workspace and limited network via `fetch_webpage` are available, but tool usage is procedurally constrained by the runSubagent-first rule.
+- Outputs are restricted to planning documents; additionally, plan output must follow a plan template and **must not include code blocks**, reinforcing the “no implementation” boundary at the formatting layer.
 
-- **Interaction contract**
+### Interaction contract
+- The contract is explicitly iterative: draft a plan, then request user feedback; success is framed as user confirmation/iteration rather than execution completion.
+- Commentary-channel preambles remain required and non-leaky, consistent with other modes.
 
-  - Requires commentary-channel preambles before tool batches and imposes stylistic constraints on preamble variety.
-  - Final answers must be professional markdown and, notably, include a rule to **add emojis to highlight key sections**, which sits in tension with the “short and impersonal” persona constraint.
+### Correction and termination behavior
+- Correction is primarily plan iteration based on feedback; “after edits run diagnostics” appears as a generic trigger but is structurally neutralized by the prohibition on edits.
+- Termination is intentionally early: after presenting a draft plan, the agent pauses for feedback; it must stop immediately if it begins considering implementation.
 
-- **Correction and termination behavior**
-  - Self-review triggers include running diagnostics/tests and reviewing git status/diff/log before commits, reflecting a governance emphasis on cautious change control even in a mode that cannot directly edit.
-  - Terminates on satisfaction or refusal; aborts if required context is missing and the user declines to provide it.
+# 5. Comparative Mode Analysis
 
-### Mode: plan
+**Most permissive to most constrained (by operational authority and side effects):**
+1. `agent` (write + execute + notebook operations; structured task management)
+2. `ask` (read-only inspection; advisory; preventive constraints on commits/destructive actions)
+3. `plan` (planning-only; no implementation; tool usage procedurally constrained)
 
-- **Authority and permissions**
+Key governance gradients:
+- **Side-effect gradient:** `agent` explicitly allows filesystem writes and terminal execution; `ask` and `plan` explicitly disallow side effects and restrict filesystem access to read-only.
+- **Tool mediation gradient:** `ask` uses tools opportunistically for context; `plan` mandates a specific tool-mediated research step (`runSubagent`) and then forbids further tool calls; `agent` allows broad tool use with batching and context requirements.
+- **Completion gradient:** `agent` defines completion in terms of task/todo completion and delivered changes; `ask` defines completion as answering the question; `plan` defines completion as delivering a plan and soliciting feedback, not executing.
+- **Authority conditionality:** `ask` and `plan` embed governance for commits/destructive actions even when not directly enabled by tools, suggesting a cross-mode safety posture that anticipates capability expansion or shared operational contexts.
 
-  - Most restrictive on action: **planning-only**, with explicit prohibition on implementation and editing.
-  - Tool mediation is uniquely gated: it **must call `runSubagent` once for research** (step 1), and **after it returns, no further tool calls are allowed**. This is a hard sequencing constraint not present in other modes.
-  - Incorporates the same commit/destructive-action prohibitions from repository guidance, but these are largely moot given the no-implementation rule.
+# 6. Design Patterns and Intent
 
-- **Scope and visibility**
+Recurring governance patterns across modes indicate several design strategies:
 
-  - Read-only workspace and limited network via `fetch_webpage`; side effects are explicitly **false**.
-  - Visibility includes attachments and tool availability lists; the mode is designed to produce a plan informed by limited, controlled research.
+- **Policy-first, disclosure-fixed identity:** Hard-coded responses for name/model and fixed refusal strings reduce ambiguity and enforce consistent institutional messaging across contexts.
+- **Channel-separated meta-communication:** The commentary channel is governed as a controlled “status blurb” surface with strict non-leakage rules, implying a deliberate separation between operational narration and substantive output.
+- **Capability-tiered autonomy:** Modes function as governance tiers:
+  - `agent` supports agentic execution with structured planning (`manage_todo_list`) and validation hooks.
+  - `ask` supports contextual Q&A with inspection tools and conservative change-management constraints.
+  - `plan` supports deliberation without action, with procedural gating via `runSubagent` and output-format constraints that prevent implementation drift.
+- **Risk containment via procedural constraints:** Exact-match replacement requirements, notebook execution rules, and “no tool calls after runSubagent returns” are governance mechanisms that constrain how actions occur, not merely whether they occur.
 
-- **Interaction contract**
+Overall, mode differentiation appears designed to manage **risk and responsibility** by aligning tool access, side effects, and completion criteria with the intended operational posture of each mode.
 
-  - Output must follow a **plan style guide**: “ONLY write the plan,” no code blocks, describe changes and reference files/symbols, and avoid manual testing sections unless requested.
-  - Maintains commentary preambles for tool batches, but the tool-batch structure is intentionally minimized by the “single subagent call” rule.
+# 7. Implications
 
-- **Correction and termination behavior**
-  - Termination logic is mode-protective: stop if drifting toward implementation; stop tool usage immediately after the subagent returns and present the plan.
-  - Iteration is framed as plan refinement via user feedback, with re-research allowed only through the prescribed workflow (implying repeated cycles would re-enter the “subagent first” gate).
+- **For users:** Mode selection materially changes what the assistant is authorized to do. Users can expect `agent` to be capable of acting (editing/running), `ask` to be investigative and advisory, and `plan` to produce structured plans without implementation. Fixed refusals and fixed identity/model disclosures create predictable boundaries but reduce conversational flexibility in those areas.
+- **For developers:** Governance is implemented through layered constraints (tool availability, procedural tool rules, formatting restrictions, and termination logic). The presence of commit/destructive-command constraints even in read-only modes suggests a design that anticipates shared governance across evolving toolsets.
+- **For researchers studying agentic systems:** This assistant exemplifies “mode as constitution”: autonomy is not merely toggled by tool access but by **workflow mandates** (e.g., required subagent research) and **post-research tool silence**, offering a clear case of procedural governance used to bound agentic behavior.
 
-## 5. Comparative Mode Analysis
+# 8. Limitations
 
-- **Most permissive vs most constrained**
+- Prompt-level analysis cannot confirm actual enforcement fidelity (e.g., whether tool restrictions are technically enforced or only instructed).
+- The content of “Microsoft content policies” is referenced but not specified, limiting precise characterization of safety scope beyond the explicitly enumerated refusal categories.
+- Network policy is under-specified across modes; “limited” or “unknown” access cannot be operationally interpreted without runtime evidence.
+- Iteration limits (max cycles/timeouts) are unspecified, so termination behavior beyond stated stopping conditions cannot be quantified.
 
-  - **Most permissive:** `agent`—it can directly change the environment (write files, run terminal commands, execute notebook cells) and manage multi-step work with a formal todo mechanism.
-  - **Intermediate:** `ask`—it can inspect and advise with read-only tools, while embedding strong guardrails around commits and destructive actions (despite lacking execution tools).
-  - **Most constrained:** `plan`—it forbids implementation entirely and imposes a strict research-then-stop tool sequence.
+# 9. Conclusion
 
-- **Authority expansion and conditionality**
-
-  - Authority expands from `plan` → `ask` → `agent` along two axes:
-    1. **Side effects** (none → unclear/limited → explicit write/execute).
-    2. **Autonomy structure** (plan template and single research call → ad hoc inspection → todo-governed multi-phase execution).
-  - Conditional authority is most formalized in `agent` (todo gating, replacement-context rules, notebook routing) and most absolute in `plan` (no implementation; no tools after subagent).
-
-- **Governance gradients**
-  - A clear gradient emerges: **deliberation and containment** in `plan`, **interpretation and inspection** in `ask`, and **execution under procedural constraints** in `agent`.
-
-## 6. Design Patterns and Intent
-
-Recurring governance strategies across modes indicate a deliberate design philosophy:
-
-- **Risk-tiered operational constitutions:** Modes appear to correspond to escalating operational risk. As side effects become possible (`agent`), governance becomes more procedural (todo discipline, edit-context requirements, notebook routing constraints).
-- **Tool mediation as governance, not convenience:** Tool availability and sequencing rules (especially `plan`’s “single subagent then no more tools”) function as hard controls on autonomy and information gathering.
-- **Channel separation to manage disclosure:** Commentary preambles are consistently constrained to prevent leakage and to standardize user-visible “status” without exposing internal reasoning or tool selection.
-- **Policy-first identity with controlled self-representation:** All modes enforce fixed identity/model claims when asked, indicating a governance choice to standardize outward identity independent of underlying runtime metadata.
-- **Repository governance injection:** In `ask` and `plan`, attached repository rules (e.g., commit/destructive command confirmations) are elevated into the assistant’s authority boundaries, suggesting a design intent to let local project governance shape assistant behavior.
-
-## 7. Implications
-
-- **For users**
-
-  - Mode choice materially changes what the assistant is authorized to do: `plan` will not implement, `ask` will primarily inspect and advise, and `agent` can execute changes with side effects.
-  - Users should expect consistent refusal behavior and limited transparency about internal instructions/tools, especially in preambles.
-
-- **For developers**
-
-  - The assistant’s governance is modular: toolsets, sequencing constraints, and side-effect permissions can be composed into distinct operational constitutions.
-  - Embedding repository-specific operational rules (e.g., via attachments) is a practical mechanism for aligning assistant authority with project governance.
-
-- **For researchers studying agentic systems**
-  - This assistant provides a clear example of **mode-based authority partitioning**: autonomy is not merely reduced by removing tools, but also by adding workflow gates (todo discipline; single research call; post-research tool prohibition).
-  - The constitutions illustrate how **interaction surfaces (commentary vs final)** can be used to enforce disclosure boundaries and standardize user-facing process signals.
-
-## 8. Limitations
-
-- Prompt-level analysis cannot determine actual runtime enforcement, tool availability in practice, or whether side-effect permissions are technically constrained beyond the declared schemas.
-- The content of “Microsoft content policies” is referenced but not specified, limiting precision about the full safety boundary.
-- Network access and data handling/privacy expectations are under-specified in all modes; conclusions about confidentiality or exfiltration risk cannot be made from these schemas alone.
-- Iteration limits (timeouts, max cycles) are not defined, so persistence and termination behavior beyond stated stopping conditions remain ambiguous.
-
-## 9. Conclusion
-
-vscode-copilot uses modes as distinct governance constitutions that preserve a shared policy-first, non-disclosing, professional programming-assistant identity while varying authority through tool access, side-effect permissions, and workflow gating. `plan` enforces deliberation without action via strict research sequencing and planning-only output; `ask` supports inspection and advice with conservative change-control norms; `agent` enables execution with procedural constraints that structure autonomy and reduce operational risk. This mode differentiation reflects a design philosophy of **graduated authority with increasing procedural governance as capability and side effects increase**, while maintaining a stable interaction identity and refusal contract.
+Across `agent`, `ask`, and `plan`, vscode-copilot preserves a stable constitutional core: policy primacy, fixed identity/model disclosures, fixed-string refusals for specified harmful content, strict non-leakage of internal instructions, and stateless operation. The modes primarily differ by **authority over side effects**, **tool mediation structure**, and **completion/termination criteria**. The overall design philosophy is a tiered governance architecture that scales autonomy with procedural safeguards, using mode boundaries to prevent capability drift while maintaining consistent institutional compliance and controlled transparency.

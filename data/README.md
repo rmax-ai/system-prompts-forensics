@@ -8,24 +8,21 @@ The pipeline treats system prompts as **governance constitutions** and produces 
 
 ## Overview of the Pipeline
 
-The workflow is a **linear, artifact-driven pipeline** orchestrated via `make`:
+The workflow is a **multi-stage, artifact-driven pipeline** orchestrated via `make`:
 
 ```
-
 payload/*.json
-↓
-analysis/*.analysis.yaml
-↓
-similarities.csv
-↓
-band-report.csv
-↓
-prompt-families.csv
-↓
-prompt-families-report.md
-↓
-final-report.md
-
+├── analysis/*.analysis.yaml
+│   ├── similarities.csv
+│   │   └── band-report.csv
+│   │       └── prompt-families.csv
+│   │           └── prompt-families-report.md
+│   │               └── final-comparative-report.md
+│   └── assistant-reports (final-report-*.md)
+│       └── final-research-report.md
+│           └── appendix-governance-primitives.md
+└── governance/*.json
+    └── primitives.registry.json
 ```
 
 Each step has:
@@ -104,6 +101,46 @@ analysis/%.analysis.yaml: payload/%.json
 - All files conform to the same structural schema
 
 **Why this matters:** This step removes stylistic and textual noise and makes prompts **comparable as governance systems**, not prose.
+
+---
+
+## Step 1b — Governance Extraction (`governance/*.json`)
+
+**Make target:**
+
+```make
+governance/%.json: payload/%.json
+```
+
+**Script:**
+
+- `scripts/governance-primitive-extract.py`
+
+**Purpose:** Extract atomic governance primitives (rules, permissions, prohibitions) from raw payloads.
+
+**Output:**
+
+- One `.json` file per payload containing a list of extracted primitives.
+
+---
+
+## Step 1c — Primitives Registry (`primitives.registry.json`)
+
+**Make target:**
+
+```make
+primitives.registry.json: $(GOVERNANCE)
+```
+
+**Script:**
+
+- `scripts/governance-primitives-reduce.py`
+
+**Purpose:** De-duplicate and normalize primitives across all tools into a canonical registry.
+
+**Output:**
+
+- `primitives.registry.json` — a unified catalog of governance primitives found across the corpus.
 
 ---
 
@@ -254,19 +291,39 @@ prompt-families-report.md: prompt-families.csv
 
 ---
 
-## Step 6 — Final Comparative Analysis (`final-report.md`)
+## Step 5b — Assistant Reports (`final-report-*.md`)
 
 **Make target:**
 
 ```make
-final-report.md: prompt-families-report.md ../methodology.md ../goal.md
+assistant-reports: $(ANALYSIS)
+```
+
+**Script:**
+
+- `scripts/final-assistant-analysis.py`
+
+**Purpose:** Generate detailed, per-assistant governance reports by synthesizing all normalized analyses for a specific tool (e.g., all `vscode-copilot` variants).
+
+**Output:**
+
+- `final-report-<assistant>.md` for each unique assistant identified in the corpus.
+
+---
+
+## Step 6 — Final Comparative Analysis (`final-comparative-report.md`)
+
+**Make target:**
+
+```make
+final-comparative-report.md: prompt-families-report.md ../methodology.md ../goal.md
 ```
 
 **Script:**
 
 - `scripts/final-comparative-analysis.py`
 
-**Purpose:** Synthesize all findings into a **comprehensive comparative report**.
+**Purpose:** Synthesize all findings into a **comprehensive comparative report** focusing on cross-tool patterns and family relationships.
 
 **What happens:**
 
@@ -288,9 +345,53 @@ final-report.md: prompt-families-report.md ../methodology.md ../goal.md
 
 **Output:**
 
-- `final-report.md`
+- `final-comparative-report.md`
 
-**Why this matters:** This step provides the **ultimate synthesis**, connecting the low-level forensic data to the high-level research objectives.
+**Why this matters:** This step provides the **structural synthesis**, connecting the low-level forensic data to the high-level research objectives.
+
+---
+
+## Step 7 — Final Research Report (`final-research-report.md`)
+
+**Make target:**
+
+```make
+final-research-report.md: assistant-reports ../goal.md
+```
+
+**Script:**
+
+- `scripts/final-research-report.py`
+
+**Purpose:** Produce the **ultimate research artifact** by synthesizing the per-assistant reports into a final narrative.
+
+**Output:**
+
+- `final-research-report.md`
+
+**Why this matters:** This is the final deliverable, providing a cohesive narrative across all assistants and research goals.
+
+---
+
+## Step 8 — Governance Primitives Appendix (`appendix-governance-primitives.md`)
+
+**Make target:**
+
+```make
+appendix-governance-primitives.md: final-research-report.md primitives.registry.json
+```
+
+**Script:**
+
+- `scripts/governance-primitives-appendix.py`
+
+**Purpose:** Generate a detailed appendix of all prompt governance primitives, cross-referenced with the final research report.
+
+**Output:**
+
+- `appendix-governance-primitives.md`
+
+**Why this matters:** It provides a technical deep-dive into the specific governance mechanisms identified, serving as a reference for the findings in the main report.
 
 ---
 
@@ -310,7 +411,7 @@ Key controls in the Makefile:
 
 - Deterministic settings
 
-  - All model calls use `temperature=0`
+  - Model calls use `temperature=0` for record-producing scripts and `temperature=0.1` for structured analysis/interpretation scripts.
   - All intermediate artifacts are persisted
 
 ---
@@ -344,11 +445,15 @@ make clean
 This deletes:
 
 - `analysis/*.analysis.yaml`
+- `governance/*.json`
+- `primitives.registry.json`
 - `similarities.csv`
 - `band-report.csv`
 - `prompt-families.csv`
 - `prompt-families-report.md`
-- `final-report.md`
+- `final-comparative-report.md`
+- `final-research-report.md`
+- `final-report-*.md`
 
 Raw payloads are preserved.
 
