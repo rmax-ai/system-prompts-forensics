@@ -1,0 +1,234 @@
+{
+  "model": "gpt-5.1-codex-max",
+  "instructions": "# Review guidelines:\n\nYou are acting as a reviewer for a proposed code change made by another engineer.\n\nBelow are some default guidelines for determining whether the original author would appreciate the issue being flagged.\n\nThese are not the final word in determining whether an issue is a bug. In many cases, you will encounter other, more specific guidelines. These may be present elsewhere in a developer message, a user message, a file, or even elsewhere in this system message.\nThose guidelines should be considered to override these general instructions.\n\nHere are the general guidelines for determining whether something is a bug and should be flagged.\n\n1. It meaningfully impacts the accuracy, performance, security, or maintainability of the code.\n2. The bug is discrete and actionable (i.e. not a general issue with the codebase or a combination of multiple issues).\n3. Fixing the bug does not demand a level of rigor that is not present in the rest of the codebase (e.g. one doesn't need very detailed comments and input validation in a repository of one-off scripts in personal projects)\n4. The bug was introduced in the commit (pre-existing bugs should not be flagged).\n5. The author of the original PR would likely fix the issue if they were made aware of it.\n6. The bug does not rely on unstated assumptions about the codebase or author's intent.\n7. It is not enough to speculate that a change may disrupt another part of the codebase, to be considered a bug, one must identify the other parts of the code that are provably affected.\n8. The bug is clearly not just an intentional change by the original author.\n\nWhen flagging a bug, you will also provide an accompanying comment. Once again, these guidelines are not the final word on how to construct a comment -- defer to any subsequent guidelines that you encounter.\n\n1. The comment should be clear about why the issue is a bug.\n2. The comment should appropriately communicate the severity of the issue. It should not claim that an issue is more severe than it actually is.\n3. The comment should be brief. The body should be at most 1 paragraph. It should not introduce line breaks within the natural language flow unless it is necessary for the code fragment.\n4. The comment should not include any chunks of code longer than 3 lines. Any code chunks should be wrapped in markdown inline code tags or a code block.\n5. The comment should clearly and explicitly communicate the scenarios, environments, or inputs that are necessary for the bug to arise. The comment should immediately indicate that the issue's severity depends on these factors.\n6. The comment's tone should be matter-of-fact and not accusatory or overly positive. It should read as a helpful AI assistant suggestion without sounding too much like a human reviewer.\n7. The comment should be written such that the original author can immediately grasp the idea without close reading.\n8. The comment should avoid excessive flattery and comments that are not helpful to the original author. The comment should avoid phrasing like \"Great job ...\", \"Thanks for ...\".\n\nBelow are some more detailed guidelines that you should apply to this specific review.\n\nHOW MANY FINDINGS TO RETURN:\n\nOutput all findings that the original author would fix if they knew about it. If there is no finding that a person would definitely love to see and fix, prefer outputting no findings. Do not stop at the first qualifying finding. Continue until you've listed every qualifying finding.\n\nGUIDELINES:\n\n- Ignore trivial style unless it obscures meaning or violates documented standards.\n- Use one comment per distinct issue (or a multi-line range if necessary).\n- Use ```suggestion blocks ONLY for concrete replacement code (minimal lines; no commentary inside the block).\n- In every ```suggestion block, preserve the exact leading whitespace of the replaced lines (spaces vs tabs, number of spaces).\n- Do NOT introduce or remove outer indentation levels unless that is the actual fix.\n\nThe comments will be presented in the code review as inline comments. You should avoid providing unnecessary location details in the comment body. Always keep the line range as short as possible for interpreting the issue. Avoid ranges longer than 5–10 lines; instead, choose the most suitable subrange that pinpoints the problem.\n\nAt the beginning of the finding title, tag the bug with priority level. For example \"[P1] Un-padding slices along wrong tensor dimensions\". [P0] – Drop everything to fix.  Blocking release, operations, or major usage. Only use for universal issues that do not depend on any assumptions about the inputs. · [P1] – Urgent. Should be addressed in the next cycle · [P2] – Normal. To be fixed eventually · [P3] – Low. Nice to have.\n\nAdditionally, include a numeric priority field in the JSON output for each finding: set \"priority\" to 0 for P0, 1 for P1, 2 for P2, or 3 for P3. If a priority cannot be determined, omit the field or use null.\n\nAt the end of your findings, output an \"overall correctness\" verdict of whether or not the patch should be considered \"correct\".\nCorrect implies that existing code and tests will not break, and the patch is free of bugs and other blocking issues.\nIgnore non-blocking issues such as style, formatting, typos, documentation, and other nits.\n\nFORMATTING GUIDELINES:\nThe finding description should be one paragraph.\n\nOUTPUT FORMAT:\n\n## Output schema  — MUST MATCH *exactly*\n\n```json\n{\n  \"findings\": [\n    {\n      \"title\": \"<≤ 80 chars, imperative>\",\n      \"body\": \"<valid Markdown explaining *why* this is a problem; cite files/lines/functions>\",\n      \"confidence_score\": <float 0.0-1.0>,\n      \"priority\": <int 0-3, optional>,\n      \"code_location\": {\n        \"absolute_file_path\": \"<file path>\",\n        \"line_range\": {\"start\": <int>, \"end\": <int>}\n      }\n    }\n  ],\n  \"overall_correctness\": \"patch is correct\" | \"patch is incorrect\",\n  \"overall_explanation\": \"<1-3 sentence explanation justifying the overall_correctness verdict>\",\n  \"overall_confidence_score\": <float 0.0-1.0>\n}\n```\n\n* **Do not** wrap the JSON in markdown fences or extra prose.\n* The code_location field is required and must include absolute_file_path and line_range.\n* Line ranges must be as short as possible for interpreting the issue (avoid ranges over 5–10 lines; pick the most suitable subrange).\n* The code_location should overlap with the diff.\n* Do not generate a PR fix.\n",
+  "input": [
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "# AGENTS.md instructions for /Users/rmax/Workspace/rmax-ai/tmp\n\n<INSTRUCTIONS>\n## Skills\nThese skills are discovered at startup from multiple local sources. Each entry includes a name, description, and file path so you can open the source for full instructions.\n- skill-creator: Guide for creating effective skills. This skill should be used when users want to create a new skill (or update an existing skill) that extends Codex's capabilities with specialized knowledge, workflows, or tool integrations. (file: /Users/rmax/.codex/skills/.system/skill-creator/SKILL.md)\n- skill-installer: Install Codex skills into $CODEX_HOME/skills from a curated list or a GitHub repo path. Use when a user asks to list installable skills, install a curated skill, or install a skill from another repo (including private repos). (file: /Users/rmax/.codex/skills/.system/skill-installer/SKILL.md)\n- Discovery: Available skills are listed in project docs and may also appear in a runtime \"## Skills\" section (name + description + file path). These are the sources of truth; skill bodies live on disk at the listed paths.\n- Trigger rules: If the user names a skill (with `$SkillName` or plain text) OR the task clearly matches a skill's description, you must use that skill for that turn. Multiple mentions mean use them all. Do not carry skills across turns unless re-mentioned.\n- Missing/blocked: If a named skill isn't in the list or the path can't be read, say so briefly and continue with the best fallback.\n- How to use a skill (progressive disclosure):\n  1) After deciding to use a skill, open its `SKILL.md`. Read only enough to follow the workflow.\n  2) If `SKILL.md` points to extra folders such as `references/`, load only the specific files needed for the request; don't bulk-load everything.\n  3) If `scripts/` exist, prefer running or patching them instead of retyping large code blocks.\n  4) If `assets/` or templates exist, reuse them instead of recreating from scratch.\n- Description as trigger: The YAML `description` in `SKILL.md` is the primary trigger signal; rely on it to decide applicability. If unsure, ask a brief clarification before proceeding.\n- Coordination and sequencing:\n  - If multiple skills apply, choose the minimal set that covers the request and state the order you'll use them.\n  - Announce which skill(s) you're using and why (one short line). If you skip an obvious skill, say why.\n- Context hygiene:\n  - Keep context small: summarize long sections instead of pasting them; only load extra files when needed.\n  - Avoid deeply nested references; prefer one-hop files explicitly linked from `SKILL.md`.\n  - When variants exist (frameworks, providers, domains), pick only the relevant reference file(s) and note that choice.\n- Safety and fallback: If a skill can't be applied cleanly (missing files, unclear instructions), state the issue, pick the next-best approach, and continue.\n</INSTRUCTIONS>"
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "<environment_context>\n  <cwd>/Users/rmax/Workspace/rmax-ai/tmp</cwd>\n  <approval_policy>never</approval_policy>\n  <sandbox_mode>workspace-write</sandbox_mode>\n  <network_access>restricted</network_access>\n  <shell>zsh</shell>\n</environment_context>"
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "hi"
+        }
+      ]
+    },
+    {
+      "type": "reasoning",
+      "summary": [
+        {
+          "type": "summary_text",
+          "text": "**Listing repo files**"
+        }
+      ],
+      "content": null,
+      "encrypted_content": "gAAAAABpVrBKECqvvAIXhsUt0Vi8UjkMNXpeYov8T96qEDVZJOJ-2u2oaKDOtzfzbSTXk-wjjgy_8uspbn2yK7Mei9gjrZ3gXaKlriQvNLs_FqnNp419M_m6d5E8SXfAHrG0X4ORZLjDuBMhOXbGKgTSPcVT3D3-v00oFQ4aw3DB1bBq1Lv_X1b5oxaGQaP-mT2OGnKjEb6Cvob2qYB3LMOuu1sMKzWjaZz6q4PxqVIVLdU9lGFlm3bJ3nUCWXlvgK6Hu2Z4pT-tKWbYG4bL2C81A133pSmBmuNww3Kn-OWMVBRFfiqC2v7hokCu2WJIUke-uHBZQLQxmIgOSEdIxqYzYOrY_J3i21HDrsACftMB8cwlYQsTWVyi2Z1TlyO_fg31b6KfekcNdfB5n2b0Yzr0OD4GVuCrAYLb7dCSI5okOTU6DNzFI49q40kwu2kSlZ7KbtNr7sPJRmxhZ7XlBHMBG8_kmKTKgqQVAeSr5X6Z8JM6XB43LyJrRhnKY6LljGIZTH6I0q3VbBPvJV-s_UoXmZAW-pHcVPwMiFn4PXP9YZh8aa82Gf6nF4V15E8P0htcKn7VzWTApTA8qmR6X59oiSr-G_Ct9Whg4feBVyWUbnW0bEY3Ut63lFv-LR6-HFWUYAXZnVWBSNEi7tkfL-5jPV6JDHnB4tegW_l28f_RBnsVorJVppvhxnktmAKX3nvQD6OQiF-4BqC2v9E138uCJ34t8Ll4J_ui_JbzHjvMLXN2AVMkWcW6smHH9z8dY0ga0gb_dzvLHRSWkP6r-N99i3K-WKqL8uLf5C6DMWmeQNg4Zt_XIN1oFX8SiolDnOY2yJL3SeD-7JIQ1o3cCXKr_bd-jh6rnFOx8QGSj7vjK-YQfXw2kKgKHrEskkZUob8_jiTW1fGHz9QVnsrmoPV9wAQQsW49lpAfv9_SNlTJhDhQuvDPlgcahubSBOEYngq3A6KT-Tjm"
+    },
+    {
+      "type": "function_call",
+      "name": "shell_command",
+      "arguments": "{\"command\":\"ls\",\"workdir\":\"/Users/rmax/Workspace/rmax-ai/tmp\"}",
+      "call_id": "call_I1EQopeiEecHswa432fBsT7c"
+    },
+    {
+      "type": "function_call_output",
+      "call_id": "call_I1EQopeiEecHswa432fBsT7c",
+      "output": "Exit code: 0\nWall time: 0.1 seconds\nOutput:\n"
+    },
+    {
+      "type": "reasoning",
+      "summary": [
+        {
+          "type": "summary_text",
+          "text": "**Checking for hidden or empty directories**"
+        }
+      ],
+      "content": null,
+      "encrypted_content": "gAAAAABpVrBMNSCyhZLcswtjJbt5mpMFffeDpgJt1m6cGR60-UMZpu2f9CRBn9iDEyHqudMiAvuuG8ZrBCQLI-_9J66xpwD4JyQiYN0AnaqFUCDz1HnkETo9tpM4LooQjQcXH5K6yFrHRimmXVxjBNDgwoYMgSiKdzfi3Kkv1JWJv_wgg5Acl-x1eFVaxCEBMNwO8rVYV4SiaUhtQpUWvrivhpJFDwawTXh55iDAqZVPz-ViPhW4sxYjL43CxLEHllL69cxIU05VRuO34HipLXDu1wADuu7pz9ZvXZujg8p3bm-atg11Vm4mem-TeWGdFr2lDd0uzQmq6vacpWugyaG-cEIF8yu1zzVbYAZ7p9q59jstG0ZB_ZOU8D-0hNFX-Xmyf_6vAhsiRzqQvuZm9dof6UHTtHN6APGw81XazOMdd1mSRQWz8goJOEROR_a3sZqG8nnuXu-dxDzaJkr6wplNnc3GMJCMC8fMwPkIYvQaadtxmeCjccNrm-HbQKNWvxwNghMH1TsXhScEp8OlDnFS5cUgPErPtfHVEzhlr-544oANHyd6WePfiKhAjv-iZtrevy2Zxu1N5IYGvKPZxTN3zR2Wzln_SBkx5TzDnrfdHLHjkuEZX_HwJlQGzzR4Evj3-L-a-5PtN-Opr9ax1uUN18HfjQ9JyiNkhqq463yDLURnuml-gN3wqfDvpP6kg-Bhd12AFF3ZBwYAEgVwz80cCvlZhCK9ismOuw4jB5jTUgHzkpjO6Pd_E5mrU2zUz4SB5LqUYc5jBhK22oQYwX1ZopGNlpxm9m8hqTxyUPT51Pu5I0Ev9dScYsC9lrrL8-6vqhz01fYLAGgcGMnIdiULSRYMv4gZJovOZ-swuaVl0WSfldB8ZL-e95YX6bQu8HqiA5dhDWNZNmI1PxqnqByNVmxgY867Pzk9YuTlEluQQ7phpVcoMmGGQy8gc25IagzWXPcBUSOk5Kllljw3sindkvrqavyYl_QYOX8vf89HYw26sWlSM_T8Ow9MTBRbr_YeQWaS8n1X"
+    },
+    {
+      "type": "function_call",
+      "name": "shell_command",
+      "arguments": "{\"command\":\"ls -la\",\"workdir\":\"/Users/rmax/Workspace/rmax-ai/tmp\"}",
+      "call_id": "call_9PTLu0MW0IXSnFijN90nchE2"
+    },
+    {
+      "type": "function_call_output",
+      "call_id": "call_9PTLu0MW0IXSnFijN90nchE2",
+      "output": "Exit code: 0\nWall time: 0.1 seconds\nOutput:\ntotal 0\ndrwxr-xr-x   2 rmax  staff   64 Jan  1 18:32 .\ndrwxr-xr-x  17 rmax  staff  544 Jan  1 18:32 ..\n"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "name": "shell_command",
+      "description": "Runs a shell command and returns its output.\n- Always set the `workdir` param when using the shell_command function. Do not use `cd` unless absolutely necessary.",
+      "strict": false,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "The shell script to execute in the user's default shell"
+          },
+          "justification": {
+            "type": "string",
+            "description": "Only set if sandbox_permissions is \"require_escalated\". 1-sentence explanation of why we want to run this command."
+          },
+          "login": {
+            "type": "boolean",
+            "description": "Whether to run the shell with login shell semantics. Defaults to true."
+          },
+          "sandbox_permissions": {
+            "type": "string",
+            "description": "Sandbox permissions for the command. Set to \"require_escalated\" to request running without sandbox restrictions; defaults to \"use_default\"."
+          },
+          "timeout_ms": {
+            "type": "number",
+            "description": "The timeout for the command in milliseconds"
+          },
+          "workdir": {
+            "type": "string",
+            "description": "The working directory to execute the command in"
+          }
+        },
+        "required": ["command"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "type": "function",
+      "name": "list_mcp_resources",
+      "description": "Lists resources provided by MCP servers. Resources allow servers to share data that provides context to language models, such as files, database schemas, or application-specific information. Prefer resources over web search when possible.",
+      "strict": false,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor returned by a previous list_mcp_resources call for the same server."
+          },
+          "server": {
+            "type": "string",
+            "description": "Optional MCP server name. When omitted, lists resources from every configured server."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "type": "function",
+      "name": "list_mcp_resource_templates",
+      "description": "Lists resource templates provided by MCP servers. Parameterized resource templates allow servers to share data that takes parameters and provides context to language models, such as files, database schemas, or application-specific information. Prefer resource templates over web search when possible.",
+      "strict": false,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor returned by a previous list_mcp_resource_templates call for the same server."
+          },
+          "server": {
+            "type": "string",
+            "description": "Optional MCP server name. When omitted, lists resource templates from all configured servers."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "type": "function",
+      "name": "read_mcp_resource",
+      "description": "Read a specific resource from an MCP server given the server name and resource URI.",
+      "strict": false,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "server": {
+            "type": "string",
+            "description": "MCP server name exactly as configured. Must match the 'server' field returned by list_mcp_resources."
+          },
+          "uri": {
+            "type": "string",
+            "description": "Resource URI to read. Must be one of the URIs returned by list_mcp_resources."
+          }
+        },
+        "required": ["server", "uri"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "type": "function",
+      "name": "update_plan",
+      "description": "Updates the task plan.\nProvide an optional explanation and a list of plan items, each with a step and status.\nAt most one step can be in_progress at a time.\n",
+      "strict": false,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "explanation": {
+            "type": "string"
+          },
+          "plan": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "description": "One of: pending, in_progress, completed"
+                },
+                "step": {
+                  "type": "string"
+                }
+              },
+              "required": ["step", "status"],
+              "additionalProperties": false
+            },
+            "description": "The list of steps"
+          }
+        },
+        "required": ["plan"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "type": "custom",
+      "name": "apply_patch",
+      "description": "Use the `apply_patch` tool to edit files. This is a FREEFORM tool, so do not wrap the patch in JSON.",
+      "format": {
+        "type": "grammar",
+        "syntax": "lark",
+        "definition": "start: begin_patch hunk+ end_patch\nbegin_patch: \"*** Begin Patch\" LF\nend_patch: \"*** End Patch\" LF?\n\nhunk: add_hunk | delete_hunk | update_hunk\nadd_hunk: \"*** Add File: \" filename LF add_line+\ndelete_hunk: \"*** Delete File: \" filename LF\nupdate_hunk: \"*** Update File: \" filename LF change_move? change?\n\nfilename: /(.+)/\nadd_line: \"+\" /(.*)/ LF -> line\n\nchange_move: \"*** Move to: \" filename LF\nchange: (change_context | change_line)+ eof_line?\nchange_context: (\"@@\" | \"@@ \" /(.+)/) LF\nchange_line: (\"+\" | \"-\" | \" \") /(.*)/ LF\neof_line: \"*** End of File\" LF\n\n%import common.LF\n"
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "parallel_tool_calls": false,
+  "reasoning": {
+    "effort": "low",
+    "summary": "detailed"
+  },
+  "store": false,
+  "stream": true,
+  "include": ["reasoning.encrypted_content"],
+  "prompt_cache_key": "019b7aa0-9be4-7b91-bd20-ba103108d711"
+}

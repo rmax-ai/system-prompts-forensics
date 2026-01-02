@@ -1,0 +1,129 @@
+# schema/system-prompt.v0.yaml
+# Canonical normalization schema for system prompt forensics
+# Version: v0 (structural, exploratory; backward-incompatible changes allowed)
+
+schema:
+  name: system-prompt
+  version: v0
+  description: >
+    Structural schema to normalize, compare, and analyze system prompts as governance constitutions for AI tools and agents.
+
+
+metadata:
+  tool:
+    name: string # e.g., opencode-cli, vscode-copilot
+    vendor: string # e.g., OpenAI, GitHub, SST
+    channel: string # cli | ide | api | service
+  version:
+    tool_version: string
+    model_family: string # e.g., gpt-4.x, gpt-5-mini
+  capture:
+    method: string # debug flag | proxy | logs | docs
+    timestamp: string # ISO-8601
+    environment:
+      os: string
+      arch: string
+      runtime: string
+    artifact_hash: string # hash of raw capture
+  notes: string # free-form capture notes
+
+layers:
+  identity:
+    role: string # declared role (assistant, agent, etc.)
+    persona: # stylistic or behavioral framing
+      traits: [string]
+      tone: string
+    self_description: string # how the system refers to itself
+    alignment_claims: [string] # e.g., "helpful", "safe", "reliable"
+
+  authority:
+    allowed_actions: [string]
+    forbidden_actions: [string]
+    conditional_actions:
+      - condition: string
+        allowed: [string]
+        forbidden: [string]
+    escalation:
+      allowed: boolean # can it ask for help / defer?
+      targets: [string] # user, policy, tool, none
+    final_decision_maker: string # model | user | tool | policy
+
+  scope:
+    inputs_visible: [string] # files, repo, terminal output, history
+    outputs_allowed: [string] # text, code, commands, patches
+    statefulness:
+      memory: boolean
+      session_persistence: boolean
+    boundaries:
+      hard_limits: [string] # explicit no-go zones
+      soft_limits: [string] # discouraged but possible
+
+  environment:
+    execution_context: string # sandboxed | local | remote | none
+    side_effects_allowed: boolean
+    network_access: string # none | limited | full
+    filesystem_access: string # none | read | write
+
+  tools:
+    declared_tools:
+      - name: string
+        type: string # function | cli | api
+        description: string
+        side_effects: boolean
+    invocation_rules:
+      explicit: boolean
+      constraints: [string]
+    abstraction_level: string # raw | wrapped | symbolic
+    failure_handling: string # retry | abort | ask-user
+
+  constraints:
+    style:
+      requirements: [string]
+      prohibitions: [string]
+    safety:
+      policies: [string]
+      refusal_style: string
+    legal:
+      restrictions: [string]
+      attribution_required: boolean
+    formatting:
+      enforced: boolean
+      schemas: [string]
+
+  reasoning:
+    visibility: string # hidden | partial | explicit
+    explanation_policy: string # always | on-request | never
+    internal_deliberation: boolean
+    justification_required: boolean
+
+  correction:
+    self_review:
+      enabled: boolean
+      triggers: [string]
+    external_feedback:
+      sources: [string] # user edits, tests, rejections
+      incorporation_rules: string
+    iteration_limits:
+      max_cycles: integer
+      timeout: string
+
+  termination:
+    stopping_conditions: [string]
+    success_definition: string
+    abort_conditions: [string]
+    handoff_behavior: string # return control, ask user, exit
+
+analysis:
+  risk_model:
+    primary_risks: [string] # e.g., unsafe code, data exfiltration
+    mitigations: [string]
+  failure_modes:
+    anticipated: [string]
+    unmitigated: [string]
+  implicit_assumptions: string # mandatory free-text synthesis
+  notable_absences: [string] # things conspicuously not specified
+
+provenance:
+  source_references: [string] # docs, commits, issues (no verbatim prompts)
+  redactions_applied: boolean
+  compliance_notes: string
