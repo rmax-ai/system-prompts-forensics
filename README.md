@@ -109,6 +109,6 @@ If you use this research or the provided artifacts in your work, please cite it 
   year         = {2026},
   version      = {v0.9.0},
   publisher    = {GitHub},
-  howpublished = {\url{https://github.com/rmax/system-prompts-forensics/releases/tag/v0.9.0}}
+  howpublished = {\url{https://github.com/rmax-ai/system-prompts-forensics/releases/tag/v0.9.0}}
 }
 ```
