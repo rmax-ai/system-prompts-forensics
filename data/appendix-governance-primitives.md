@@ -4,6 +4,8 @@
 
 Prompt Governance Primitives (PGPs) are recurring, prompt-encoded control structures that allocate authority, bound scope and visibility, mediate tool use, constrain outputs, and define correction/termination behavior in AI developer tools. They are presented here as an appendix to support architectural reuse and comparison: readers can treat each primitive as a modular governance component, trace where it appears across assistants/modes, and compose similar regimes without re-deriving the underlying patterns from full system prompts.
 
+**Use of AI Assistance**: This appendix was generated using GPT-5.2 for data analysis and synthesis, with final edits performed using Gemini 3 Flash (via GitHub Copilot extension in VS Code), under the author's methodology and review.
+
 This appendix is organized into (i) **abstract primitives** (cross-artifact structural patterns) and (ii) **concrete primitives** (specific instantiations tied to a particular assistant/mode). Traceability is preserved via “Observed In” / “Examples” lists rather than verbatim prompt text.
 
 ---

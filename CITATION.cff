@@ -1,22 +1,32 @@
 cff-version: 1.2.0
-message: "If you use this software or the research findings, please cite it as below."
+message: "If you use or reference this work, please cite it as below."
+title: "System Prompt Forensics: Governance Structures in AI Developer Assistants"
+type: report
 authors:
   - family-names: "Espinoza"
     given-names: "R. Max"
-    orcid: "https://orcid.org/0000-0000-0000-0000" # Placeholder, update if known
-title: "System Prompt Forensics: A Governance Framework for AI Developer Tools"
-version: 0.9.0
+    affiliation: "Independent Researcher"
 date-released: 2026-01-03
-url: "https://github.com/rmax-ai/system-prompts-forensics/releases/tag/v0.9.0"
-abstract: >-
-  A forensic framework for treating AI system prompts as governance artifacts.
-  This project provides a methodology to normalize, analyze, and compare
-  system prompts across major AI assistants, decomposing them into modular
-  Prompt Governance Primitives (PGPs) to surface architectural trade-offs
-  and control mechanisms.
+version: "0.9.0"
+url: "https://system-prompts-forensics.rmax.ai"
+repository-code: "https://github.com/rmax-ai/system-prompts-forensics"
+abstract: >
+  An independent systems research study analyzing system prompts in AI developer
+  assistants as governance layers, identifying recurring Prompt Governance Primitives
+  that constrain authority, scope, tooling, and risk.
 keywords:
-  - AI Governance
-  - System Prompts
-  - AI Safety
-  - Autonomous Agents
-  - Forensic Analysis
+  - system prompts
+  - AI governance
+  - agent architectures
+  - developer assistants
+  - AI safety
+  - forensic analysis
+references:
+  - type: software
+    title: "GPT-5.2"
+    authors:
+      - name: "OpenAI"
+    url: "https://openai.com"
+    notes: >
+      Used as an assistive tool for drafting, editorial refinement,
+      cross-document synthesis, and diagram generation.

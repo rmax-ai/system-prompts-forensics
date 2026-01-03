@@ -8,6 +8,8 @@ System prompts are treated as governance artifacts because they function less as
 
 This report synthesizes validated per-assistant analyses derived from a normalized system-prompt schema. Each assistant’s modes are treated as internal constitutional variants and are aggregated into a single regime description. Cross-assistant comparison is performed structurally along invariant dimensions: authority boundaries, scope and visibility, tool mediation, and correction and termination logic.
 
+**Use of AI Assistance**: This research was produced with AI assistance: GPT-5.2 for data analysis and synthesis, ChatGPT for ideation and prompt refinement, ChatGPT Deep Research for citations, and Gemini 3 Flash (via GitHub Copilot extension in VS Code) for final edits. The author's primary contribution is the development of the AI-driven research methodology and data capture; the author does not claim analytical judgments or conclusions.
+
 # 3. Assistants Under Study
 
 - **codex (exec, review):** A local software engineering agent with a split constitution: an execution-capable operator mode and a schema-bound reviewer mode emphasizing evidentiary discipline.
