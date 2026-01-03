@@ -43,7 +43,8 @@ Espinoza, R. M. (2026). System Prompt Forensics: Governance Structures in AI Dev
 ```
 
 ### License
-Licensing status is currently under review.
+- Research content (paper, appendix, briefs, diagrams): **CC BY 4.0**
+- Code and scripts: **MIT** (see `LICENSE-CODE`)
 
 ### Contact / Attribution
 - R. Max Espinoza
