@@ -20,8 +20,10 @@
             </a>
             <div class="flex gap-6 text-sm font-medium items-center">
                 <a href="index.html" class="hover:text-indigo-300 transition-colors">Summary</a>
+                <a href="paper.html" class="hover:text-indigo-300 transition-colors">Paper</a>
                 <a href="report.html" class="hover:text-indigo-300 transition-colors">Report</a>
                 <a href="appendix.html" class="hover:text-indigo-300 transition-colors">Appendix</a>
+                <a href="briefs.html" class="hover:text-indigo-300 transition-colors">Briefs</a>
                 <a href="https://github.com/rmax-ai/system-prompts-forensics/" class="hover:text-indigo-300 transition-colors" title="GitHub Repository">
                     <svg class="h-5 w-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
                 </a>
@@ -30,7 +32,6 @@
     </nav>
     <div class="max-w-4xl mx-auto px-6 py-12 lg:py-24">
         <header class="mb-16 border-b border-slate-200 pb-8">
-            <img src="images/header.png" alt="System Prompt Forensics Header" class="w-full h-auto mb-8 rounded-xl shadow-lg">
             <nav class="mb-8">
                 <a href="index.html" class="text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -39,13 +40,30 @@
                     Back to Summary
                 </a>
             </nav>
-            <h1 class="text-4xl font-bold tracking-tight text-slate-900 mb-4">Research Report</h1>
-            <p class="text-xl text-slate-600 italic">System prompts as governance layers: An architectural analysis of AI-assisted developer tools.</p>
+            <h1 class="text-4xl font-bold tracking-tight text-slate-900 mb-4">System Prompt Forensics: Governance Structures in AI Developer Assistants</h1>
+            <p class="text-xl text-slate-600 italic">Full Research Report</p>
         </header>
 
         <main class="space-y-16">
+            <!-- Table of Contents -->
+            <section class="bg-slate-50 p-6 rounded-lg border border-slate-200">
+                <h2 class="text-lg font-bold mb-4 text-slate-800">Table of Contents</h2>
+                <nav class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                    <a href="#context" class="text-indigo-600 hover:underline">1. Research Context and Objectives</a>
+                    <a href="#methodology" class="text-indigo-600 hover:underline">2. Methodology Overview</a>
+                    <a href="#assistants" class="text-indigo-600 hover:underline">3. Assistants Under Study</a>
+                    <a href="#comparative" class="text-indigo-600 hover:underline">4. Comparative Governance Analysis</a>
+                    <a href="#patterns" class="text-indigo-600 hover:underline">5. Cross-Assistant Design Patterns</a>
+                    <a href="#pgps" class="text-indigo-600 hover:underline">6. Prompt Governance Primitives (PGPs)</a>
+                    <a href="#risks" class="text-indigo-600 hover:underline">7. Risk Models and Mitigations</a>
+                    <a href="#implications" class="text-indigo-600 hover:underline">8. Implications</a>
+                    <a href="#limitations" class="text-indigo-600 hover:underline">9. Limitations</a>
+                    <a href="#conclusion" class="text-indigo-600 hover:underline">10. Conclusion</a>
+                </nav>
+            </section>
+
             <!-- 1. Research Context and Objectives -->
-            <section>
+            <section id="context">
                 <h2 class="text-2xl font-semibold mb-6 text-slate-800 border-l-4 border-indigo-500 pl-4">1. Research Context and Objectives</h2>
                 <div class="prose prose-slate max-w-none">
                     <p>This study examines system prompts used by AI-assisted developer tools to characterize how they encode authority, constraints, and behavior. The goal is architectural: to treat system prompts as governance layers—implicit agent constitutions—that specify identity, permissible actions, visibility into context, tool use, correction loops, and stopping rules. By normalizing and comparing prompts across IDE and CLI assistants, the study aims to extract recurring prompt-level governance primitives and to identify architectural classes (e.g., suggestion engines, command executors, workspace agents, constitutional stewards) that can inform the design of robust, agent-first systems.</p>
@@ -54,15 +72,16 @@
             </section>
 
             <!-- 2. Methodology Overview -->
-            <section>
+            <section id="methodology">
                 <h2 class="text-2xl font-semibold mb-6 text-slate-800 border-l-4 border-indigo-500 pl-4">2. Methodology Overview</h2>
                 <div class="prose prose-slate max-w-none">
                     <p>This report synthesizes validated per-assistant analyses derived from a normalized system-prompt schema. Each assistant’s modes are treated as internal constitutional variants and are aggregated into a single regime description. Cross-assistant comparison is performed structurally along invariant dimensions: authority boundaries, scope and visibility, tool mediation, and correction and termination logic.</p>
+                    <p><strong>Use of AI Assistance:</strong> This research was produced with AI assistance: GPT-5.2 for data analysis and synthesis, ChatGPT for ideation and prompt refinement, ChatGPT Deep Research for citations, and Gemini 3 Flash (via GitHub Copilot extension in VS Code) for final edits. The author's primary contribution is the development of the AI-driven research methodology and data capture; the author does not claim analytical judgments or conclusions.</p>
                 </div>
             </section>
 
             <!-- 3. Assistants Under Study -->
-            <section class="bg-white p-8 rounded-xl shadow-sm border border-slate-100">
+            <section id="assistants" class="bg-white p-8 rounded-xl shadow-sm border border-slate-100">
                 <h2 class="text-2xl font-semibold mb-6 text-slate-800">3. Assistants Under Study</h2>
                 <div class="grid grid-cols-1 gap-6">
                     <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
@@ -89,7 +108,7 @@
             </section>
 
             <!-- 4. Comparative Governance Analysis -->
-            <section>
+            <section id="comparative">
                 <h2 class="text-2xl font-semibold mb-8 text-slate-800 border-l-4 border-indigo-500 pl-4">4. Comparative Governance Analysis</h2>
 
                 <div class="space-y-12">
@@ -148,11 +167,11 @@
             </section>
 
             <!-- 5. Cross-Assistant Design Patterns -->
-            <section>
+            <section id="patterns">
                 <h2 class="text-2xl font-semibold mb-6 text-slate-800 border-l-4 border-indigo-500 pl-4">5. Cross-Assistant Design Patterns</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="p-6 bg-slate-100 rounded-lg">
-                        <h3 class="font-bold mb-2">Recurring Patterns</h3>
+                        <h3 class="font-bold mb-2 text-slate-800">Recurring Patterns</h3>
                         <ul class="text-sm text-slate-600 list-disc pl-4 space-y-1">
                             <li>Mode as constitution (tiered autonomy)</li>
                             <li>Tool-mediated accountability</li>
@@ -162,7 +181,7 @@
                         </ul>
                     </div>
                     <div class="p-6 bg-slate-100 rounded-lg">
-                        <h3 class="font-bold mb-2">Notable Divergences</h3>
+                        <h3 class="font-bold mb-2 text-slate-800">Notable Divergences</h3>
                         <ul class="text-sm text-slate-600 list-disc pl-4 space-y-1">
                             <li>Fixed identity and refusal strings (vscode-copilot)</li>
                             <li>Mandatory subagent sequencing (vscode-copilot plan)</li>
@@ -173,7 +192,7 @@
             </section>
 
             <!-- 6. Prompt Governance Primitives (PGPs) -->
-            <section>
+            <section id="pgps">
                 <h2 class="text-2xl font-semibold mb-6 text-slate-800 border-l-4 border-indigo-500 pl-4">6. Prompt Governance Primitives (PGPs)</h2>
                 <div class="prose prose-slate max-w-none">
                     <p>A key output of this research is the identification of <strong>Prompt Governance Primitives (PGPs)</strong>—modular, recurring control structures encoded directly into system prompts. These primitives serve as the building blocks for agent governance, allowing architects to compose predictable behavior regimes without re-deriving patterns from scratch.</p>
@@ -182,12 +201,12 @@
                         <li><strong>Abstract Primitives:</strong> Cross-artifact structural patterns such as <em>Approval-gated execution (PGP-001)</em>, <em>Read-before-edit enforcement (PGP-012)</em>, and <em>Instruction confidentiality (PGP-014)</em>.</li>
                         <li><strong>Concrete Primitives:</strong> Specific implementations tied to an assistant's unique requirements, such as <em>Malware refusal (PGP-015)</em> or <em>Strict JSON output contracts (PGP-016)</em>.</li>
                     </ul>
-                    <p class="mt-4">For a complete catalog of all 17 identified primitives, including their risk mitigations and observed occurrences, see the <a href="appendix.html" class="text-indigo-600 hover:underline font-semibold">Full PGP Appendix</a>.</p>
+                    <p class="mt-4">For a complete catalog of all identified primitives, including their risk mitigations and observed occurrences, see the <a href="appendix.html" class="text-indigo-600 hover:underline font-semibold">Full PGP Appendix</a>.</p>
                 </div>
             </section>
 
             <!-- 7. Risk Models and Mitigations -->
-            <section>
+            <section id="risks">
                 <h2 class="text-2xl font-semibold mb-6 text-slate-800 border-l-4 border-indigo-500 pl-4">7. Risk Models and Mitigations</h2>
                 <div class="prose prose-slate max-w-none">
                     <p>Assistants encode risk primarily through structural constraints rather than broad admonitions.</p>
@@ -201,7 +220,7 @@
             </section>
 
             <!-- 8. Implications -->
-            <section>
+            <section id="implications">
                 <h2 class="text-2xl font-semibold mb-6 text-slate-800 border-l-4 border-indigo-500 pl-4">8. Implications</h2>
                 <div class="prose prose-slate max-w-none">
                     <p>For developers building agentic systems, prompt-level governance can be engineered as a layered constitution. Strong safety does not require removing tools; it can be achieved by separating permission from capability and by embedding stop-and-ask triggers for high-risk state changes.</p>
@@ -209,7 +228,7 @@
             </section>
 
             <!-- 9. Limitations -->
-            <section>
+            <section id="limitations">
                 <h2 class="text-2xl font-semibold mb-6 text-slate-800 border-l-4 border-indigo-500 pl-4">9. Limitations</h2>
                 <div class="prose prose-slate max-w-none text-slate-600 italic">
                     <p>Prompt-level analysis cannot establish runtime enforcement fidelity. Several regimes reference external policy documents or repository-local governance whose content is not fully observable here. Additionally, some controls are specified as rules without revealing detection mechanisms.</p>
@@ -217,7 +236,7 @@
             </section>
 
             <!-- 10. Conclusion -->
-            <section class="bg-indigo-900 text-white p-8 rounded-xl shadow-lg">
+            <section id="conclusion" class="bg-indigo-900 text-white p-8 rounded-xl shadow-lg">
                 <h2 class="text-2xl font-semibold mb-6">10. Conclusion</h2>
                 <p class="text-indigo-100">
                     Across IDE and CLI assistants, system prompts function as constitutional governance documents that allocate authority, bound scope, mediate action through tools, and define correction and termination logic. This study demonstrates that system prompts are a practical governance layer: they encode enforceable constitutional patterns that shape agent behavior independently of task content.
@@ -226,14 +245,10 @@
         </main>
 
         <footer class="mt-24 pt-8 border-t border-slate-200 text-center text-slate-500 text-sm">
-            <div class="mb-8 p-6 bg-slate-100 rounded-lg text-left max-w-2xl mx-auto border border-slate-200">
-                <h3 class="text-slate-800 font-semibold mb-2">Cite this work:</h3>
-                <p class="font-mono text-xs leading-relaxed">
-                    Espinoza, R. M. (2026). <i>System Prompt Forensics: A Governance Framework for AI Developer Tools</i> (Version 0.9.0). [Computer software]. https://github.com/rmax-ai/system-prompts-forensics/releases/tag/v0.9.0
-                </p>
-            </div>
-            <p>&copy; 2026 System Prompt Forensics Project</p>
-            <p class="mt-2"><a href="index.html" class="text-indigo-600 hover:underline">Back to Research Summary</a> | <a href="appendix.html" class="text-indigo-600 hover:underline">PGP Appendix</a></p>
+            <p>Author: R. Max Espinoza | <a href="https://github.com/rmax-ai/system-prompts-forensics/" class="text-indigo-600 hover:underline">GitHub Repository</a></p>
+            <p class="mt-2">Produced with AI assistance (GPT-5.2). See <a href="index.html#disclosure" class="text-indigo-600 hover:underline">Disclosure</a> for details.</p>
+            <p class="mt-4">&copy; 2026 R. Max Espinoza. Content licensed CC BY 4.0. Code licensed MIT.</p>
+            <p class="mt-2"><a href="paper.html" class="text-indigo-600 hover:underline">Research Paper</a> | <a href="report.html" class="text-indigo-600 hover:underline">Technical Report</a> | <a href="appendix.html" class="text-indigo-600 hover:underline">Appendix</a> | <a href="briefs.html" class="text-indigo-600 hover:underline">Briefs</a></p>
         </footer>
     </div>
 </body>

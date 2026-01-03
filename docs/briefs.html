@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Briefs - System Prompt Forensics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .prose h1, .prose h2, .prose h3 { color: #0f172a; font-weight: 700; margin-top: 2em; margin-bottom: 1em; }
+        .prose p { margin-bottom: 1.25em; line-height: 1.75; color: #334155; }
+        .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1.25em; color: #334155; }
+        .prose li { margin-bottom: 0.5em; }
+        .prose strong { color: #1e293b; font-weight: 600; }
+        .prose blockquote { border-left: 4px solid #e2e8f0; padding-left: 1.5em; font-style: italic; color: #475569; margin: 2em 0; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased">
+    <nav class="bg-slate-900 text-white py-3 px-6 sticky top-0 z-50 shadow-md">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <a href="https://github.com/rmax-ai/system-prompts-forensics/" class="flex items-center gap-2 hover:text-indigo-300 transition-colors">
+                <svg class="h-6 w-6 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                <span class="font-bold tracking-tight">System Prompt Forensics</span>
+            </a>
+            <div class="flex gap-6 text-sm font-medium items-center">
+                <a href="index.html" class="hover:text-indigo-300 transition-colors">Summary</a>
+                <a href="paper.html" class="hover:text-indigo-300 transition-colors">Paper</a>
+                <a href="report.html" class="hover:text-indigo-300 transition-colors">Report</a>
+                <a href="appendix.html" class="hover:text-indigo-300 transition-colors">Appendix</a>
+                <a href="briefs.html" class="hover:text-indigo-300 transition-colors">Briefs</a>
+                <a href="https://github.com/rmax-ai/system-prompts-forensics/" class="hover:text-indigo-300 transition-colors" title="GitHub Repository">
+                    <svg class="h-5 w-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-6 py-12 lg:py-24">
+        <header class="mb-16 border-b border-slate-200 pb-8">
+            <nav class="mb-8">
+                <a href="index.html" class="text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Back to Summary
+                </a>
+            </nav>
+            <h1 class="text-4xl font-bold tracking-tight text-slate-900 mb-4">Research Briefs</h1>
+            <p class="text-xl text-slate-600 italic">Condensed summaries for decision-makers and governance leads.</p>
+        </header>
+
+        <div class="flex flex-col md:flex-row gap-12">
+            <!-- Sidebar TOC -->
+            <aside class="md:w-64 flex-shrink-0">
+                <div class="sticky top-32 space-y-4">
+                    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider">On this page</h3>
+                    <nav class="flex flex-col space-y-2">
+                        <a href="#executive" class="text-slate-600 hover:text-indigo-600 transition-colors py-1 border-l-2 border-transparent hover:border-indigo-200 pl-4">Executive Brief</a>
+                        <a href="#board" class="text-slate-600 hover:text-indigo-600 transition-colors py-1 border-l-2 border-transparent hover:border-indigo-200 pl-4">Board Brief</a>
+                    </nav>
+                </div>
+            </aside>
+
+            <main class="flex-1 space-y-24">
+                <!-- Executive Brief -->
+                <section id="executive" class="scroll-mt-32">
+                    <div class="bg-white p-8 md:p-12 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full mb-6 uppercase tracking-widest">For Decision Makers</div>
+                        <div class="prose prose-slate max-w-none">
+                            <h2 class="text-3xl font-bold mb-8 mt-0">Executive Brief: System Prompts as Governance Artifacts</h2>
+
+                            <h3 class="text-xl font-semibold text-slate-800 mb-4">Executive Summary</h3>
+                            <p>System prompts in AI developer tools are commonly treated as implementation details, but in practice they function as governance artifacts: they allocate authority between user intent and policy, bound permissible actions, constrain what the assistant may claim about workspace state, and define correction and termination behavior.</p>
+                            <p>This work applies <strong>prompt forensics</strong>: a schema-based, cross-mode comparison of system prompts used by IDE and CLI developer assistants. We treat each interaction mode (e.g., ask/plan/agent, plan vs build, exec vs review) as a distinct constitutional variant that reallocates autonomy and permissible side effects.</p>
+
+                            <h3 class="text-xl font-semibold text-slate-800 mb-4">Key Findings</h3>
+                            <ul class="space-y-2">
+                                <li><strong>Tiered autonomy via modes:</strong> Authority and permissible side effects are consistently partitioned by mode rather than treated as a single, uniform capability set.</li>
+                                <li><strong>Tool calls as enforcement boundaries:</strong> Tools are the dominant action surface; prompts encode procedural obligations for tool use, not only access control.</li>
+                                <li><strong>Visibility minimization as a risk lever:</strong> Prompts treat partial observability, memory policies, and bounded context as governance mechanisms to reduce overreach and long-horizon drift.</li>
+                                <li><strong>Conservative change and integrity doctrines:</strong> Many regimes encode explicit safeguards against unintended workspace changes, including stop-and-ask triggers and restrictions on destructive operations.</li>
+                                <li><strong>Separation of capability from permission:</strong> Tools may exist while specific outcomes remain forbidden; prompts explicitly constrain what the assistant is allowed to do despite apparent capability.</li>
+                            </ul>
+
+                            <h3 class="text-xl font-semibold text-slate-800 mb-4">Risks Addressed</h3>
+                            <p>This work maps prompt-encoded governance controls to concrete operational risks for tool-mediated agents:</p>
+                            <ul class="space-y-2">
+                                <li><strong>Autonomy drift:</strong> Addressed by mode-tiered autonomy and explicit stop conditions.</li>
+                                <li><strong>Workspace corruption:</strong> Addressed by conservative change doctrines and read-before-edit rules.</li>
+                                <li><strong>Instruction leakage:</strong> Addressed by explicit confidentiality constraints.</li>
+                                <li><strong>Ungrounded claims:</strong> Addressed by state minimization and requirements for tool-grounded inspection.</li>
+                            </ul>
+
+                            <h3 class="text-xl font-semibold text-slate-800 mb-4">Implications</h3>
+                            <p>Treat governance as an explicit architecture layer. System prompts already encode operational boundaries; making those boundaries first-class (and versioned) improves clarity about decision rights, side effects, and stop conditions.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Board Brief -->
+                <section id="board" class="scroll-mt-32">
+                    <div class="bg-white p-8 md:p-12 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full mb-6 uppercase tracking-widest">For Board & Governance</div>
+                        <div class="prose prose-slate max-w-none">
+                            <h2 class="text-3xl font-bold mb-8 mt-0">Board Brief: A Governance Control Gap in AI Tools</h2>
+
+                            <h3 class="text-xl font-semibold text-slate-800 mb-4">Key Takeaways</h3>
+                            <ul class="space-y-2">
+                                <li><strong>System prompts are not “setup text”:</strong> They act as hidden rules that control what an AI tool can see, do, and refuse.</li>
+                                <li><strong>Controls can be standardized:</strong> Repeated governance patterns exist across vendors, meaning this is manageable and auditable.</li>
+                                <li><strong>Practical Risks:</strong> Unintended repository changes, uncontrolled autonomy, and leakage of internal rules are immediate concerns.</li>
+                                <li><strong>Leadership Action:</strong> Treat prompts and modes as governed assets with visibility, versioning, and kill-switch clarity.</li>
+                            </ul>
+
+                            <h3 class="text-xl font-semibold text-slate-800 mb-4">The Issue</h3>
+                            <p>A “system prompt” is the instruction layer that defines how an AI tool should behave. In AI developer tools, these prompts function like governance rules: they allocate decision rights, limit access, and define when to stop and ask a human. These rules are usually invisible, creating a board-level control gap where significant operational authority exists without consistent oversight.</p>
+
+                            <h3 class="text-xl font-semibold text-slate-800 mb-4">Recommended Leadership Actions</h3>
+                            <ul class="space-y-2">
+                                <li>Require <strong>prompt and mode transparency</strong> from vendors for any tool that can modify files or run commands.</li>
+                                <li>Establish <strong>versioning and approval</strong> for governance changes (prompt updates, tool permissions).</li>
+                                <li>Align <strong>agent authority tiers</strong> to risk appetite: define which modes are allowed for which repositories.</li>
+                                <li>Mandate <strong>escalation and kill-switch clarity</strong>: define when the assistant must stop and how to halt execution.</li>
+                                <li>Add <strong>audit hooks</strong>: ensure logs can distinguish human intent, tool actions, and refusals.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <footer class="mt-24 pt-8 border-t border-slate-200 text-center text-slate-500 text-sm">
+            <p>Author: R. Max Espinoza | <a href="https://github.com/rmax-ai/system-prompts-forensics/" class="text-indigo-600 hover:underline">GitHub Repository</a></p>
+            <p class="mt-2">Produced with AI assistance (GPT-5.2). See <a href="index.html#disclosure" class="text-indigo-600 hover:underline">Disclosure</a> for details.</p>
+            <p class="mt-4">&copy; 2026 R. Max Espinoza. Content licensed CC BY 4.0. Code licensed MIT.</p>
+            <p class="mt-2"><a href="paper.html" class="text-indigo-600 hover:underline">Research Paper</a> | <a href="report.html" class="text-indigo-600 hover:underline">Technical Report</a> | <a href="appendix.html" class="text-indigo-600 hover:underline">Appendix</a> | <a href="briefs.html" class="text-indigo-600 hover:underline">Briefs</a></p>
+        </footer>
+    </div>
+</body>
+</html>

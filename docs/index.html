@@ -20,8 +20,10 @@
             </a>
             <div class="flex gap-6 text-sm font-medium items-center">
                 <a href="index.html" class="hover:text-indigo-300 transition-colors">Summary</a>
+                <a href="paper.html" class="hover:text-indigo-300 transition-colors">Paper</a>
                 <a href="report.html" class="hover:text-indigo-300 transition-colors">Report</a>
                 <a href="appendix.html" class="hover:text-indigo-300 transition-colors">Appendix</a>
+                <a href="briefs.html" class="hover:text-indigo-300 transition-colors">Briefs</a>
                 <a href="https://github.com/rmax-ai/system-prompts-forensics/" class="hover:text-indigo-300 transition-colors" title="GitHub Repository">
                     <svg class="h-5 w-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
                 </a>
@@ -31,135 +33,113 @@
     <div class="max-w-4xl mx-auto px-6 py-12 lg:py-24">
         <header class="mb-16 border-b border-slate-200 pb-8">
             <img src="images/header.png" alt="System Prompt Forensics Header" class="w-full h-auto mb-8 rounded-xl shadow-lg">
-            <h1 class="text-4xl font-bold tracking-tight text-slate-900 mb-4">System Prompt Forensics</h1>
+            <h1 class="text-4xl font-bold tracking-tight text-slate-900 mb-4">System Prompt Forensics: Governance Structures in AI Developer Assistants</h1>
             <p class="text-xl text-slate-600 italic">Treating AI system prompts as governance constitutions.</p>
         </header>
 
         <main class="space-y-16">
-            <!-- The Governance Thesis -->
+            <!-- What This Research Is -->
             <section>
-                <h2 class="text-2xl font-semibold mb-6 text-slate-800 border-l-4 border-indigo-500 pl-4">The Governance Thesis: Prompts as Constitutions</h2>
+                <h2 class="text-2xl font-semibold mb-6 text-slate-800 border-l-4 border-indigo-500 pl-4">What This Research Is</h2>
                 <div class="prose prose-slate max-w-none">
-                    <p>System prompts in AI-assisted developer tools are more than just task instructions; they function as <strong>implicit constitutions</strong>. These hidden strings of text define the fundamental laws of an agent—what it is, what it can see, who it must obey, and when it must stop.</p>
-                    <p>This research moves beyond the view of system prompts as mere "instruction sets" or "persona definitions." Instead, we treat them as <strong>governance artifacts</strong>—the foundational legal framework of an AI agent. These prompts encode the distribution of power, the boundaries of visibility, and the conditions for termination.</p>
+                    <ul class="space-y-4">
+                        <li><strong>The Hidden Constitution:</strong> System prompts are more than instructions; they are implicit constitutions defining the fundamental laws of an agent—authority, visibility, and constraints.</li>
+                        <li><strong>Forensic Methodology:</strong> By capturing raw HTTP traffic, we extract and normalize these constitutions into a structured, comparable format to map governance layers.</li>
+                        <li><strong>Discovery of PGPs:</strong> We identified recurring Prompt Governance Primitives (PGPs)—modular building blocks of predictable agent behavior.</li>
+                        <li><strong>Auditable Infrastructure:</strong> Moving agent governance from "vibes" to auditable infrastructure with clear authority boundaries.</li>
+                    </ul>
                 </div>
             </section>
 
-            <!-- The Forensic Approach -->
+            <!-- Key Artifacts -->
             <section class="bg-white p-8 rounded-xl shadow-sm border border-slate-100">
-                <h2 class="text-2xl font-semibold mb-6 text-slate-800">The Forensic Approach</h2>
-                <p class="mb-4">By capturing raw HTTP traffic from tools like GitHub Copilot and Codex, we extract the underlying system prompts and normalize them into a structured, comparable format. We map out the actual governance layers:</p>
-                <ul class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <li class="flex items-start">
-                        <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-sm font-semibold mr-3">Authority</span>
-                        <span class="text-slate-600">Who has the final say? (User vs. Policy vs. Model)</span>
-                    </li>
-                    <li class="flex items-start">
-                        <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-sm font-semibold mr-3">Scope</span>
-                        <span class="text-slate-600">What parts of the workspace are visible or writable?</span>
-                    </li>
-                    <li class="flex items-start">
-                        <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-sm font-semibold mr-3">Mediation</span>
-                        <span class="text-slate-600">How are tools gated and sequenced?</span>
-                    </li>
-                    <li class="flex items-start">
-                        <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-sm font-semibold mr-3">Termination</span>
-                        <span class="text-slate-600">What triggers a hard stop or a "stop-and-ask"?</span>
-                    </li>
-                </ul>
-            </section>
-
-            <!-- Architectural Classes -->
-            <section>
-                <h2 class="text-2xl font-semibold mb-6 text-slate-800">Architectural Classes of AI Assistants</h2>
+                <h2 class="text-2xl font-semibold mb-6 text-slate-800">Key Artifacts</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="p-6 bg-slate-100 rounded-lg">
-                        <h3 class="font-bold mb-2">Suggestion Engines</h3>
-                        <p class="text-sm text-slate-600">Minimal authority, focused on low-risk text generation with high policy compliance (e.g., Copilot Inline).</p>
-                    </div>
-                    <div class="p-6 bg-slate-100 rounded-lg">
-                        <h3 class="font-bold mb-2">Command Executors</h3>
-                        <p class="text-sm text-slate-600">High authority over the terminal, governed by strict procedural rules and "stop-and-ask" triggers (e.g., Codex Exec).</p>
-                    </div>
-                    <div class="p-6 bg-slate-100 rounded-lg">
-                        <h3 class="font-bold mb-2">Workspace Agents</h3>
-                        <p class="text-sm text-slate-600">Broad authority over the filesystem and tools, managed through mode-tiered permissions (e.g., VS Code Copilot Agent).</p>
-                    </div>
-                    <div class="p-6 bg-slate-100 rounded-lg">
-                        <h3 class="font-bold mb-2">Constitutional Stewards</h3>
-                        <p class="text-sm text-slate-600">Specialized modes where the agent's primary role is to enforce a specific schema or workflow (e.g., Codex Review).</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- The Authority Gradient -->
-            <section>
-                <h2 class="text-2xl font-semibold mb-6 text-slate-800">The Authority Gradient</h2>
-                <div class="space-y-4">
-                    <div class="flex gap-4">
-                        <div class="w-1/3 font-semibold text-indigo-600">Policy-Supremacy</div>
-                        <div class="w-2/3 text-slate-600">Hard-coded refusals and identity disclosures that the model cannot override.</div>
-                    </div>
-                    <div class="flex gap-4">
-                        <div class="w-1/3 font-semibold text-indigo-600">User-Consent</div>
-                        <div class="w-2/3 text-slate-600">Authority is expanded conditionally through approval-gated escalation.</div>
-                    </div>
-                    <div class="flex gap-4">
-                        <div class="w-1/3 font-semibold text-indigo-600">Model-Autonomy</div>
-                        <div class="w-2/3 text-slate-600">The model is the final decision-maker within its sandbox, trading consent gates for internal controls.</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- PGPs -->
-            <section class="bg-indigo-900 text-white p-8 rounded-xl shadow-lg">
-                <div class="flex justify-between items-start mb-6">
-                    <h2 class="text-2xl font-semibold">Prompt Governance Primitives (PGPs)</h2>
-                    <a href="appendix.html" class="text-indigo-300 hover:text-white text-sm font-semibold flex items-center gap-1">
-                        View Appendix
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                        </svg>
+                    <a href="paper.html" class="block p-6 bg-slate-50 rounded-lg border border-slate-200 hover:border-indigo-400 transition-colors">
+                        <h3 class="font-bold text-indigo-700 mb-2">Research Paper</h3>
+                        <p class="text-sm text-slate-600">The formal research paper detailing the PGP taxonomy and governance theory.</p>
+                    </a>
+                    <a href="report.html" class="block p-6 bg-slate-50 rounded-lg border border-slate-200 hover:border-indigo-400 transition-colors">
+                        <h3 class="font-bold text-indigo-700 mb-2">Technical Report</h3>
+                        <p class="text-sm text-slate-600">The complete technical analysis of system prompt governance across major AI assistants.</p>
+                    </a>
+                    <a href="appendix.html" class="block p-6 bg-slate-50 rounded-lg border border-slate-200 hover:border-indigo-400 transition-colors">
+                        <h3 class="font-bold text-indigo-700 mb-2">Appendix (PGPs)</h3>
+                        <p class="text-sm text-slate-600">A catalog of Prompt Governance Primitives identified during the research.</p>
+                    </a>
+                    <a href="briefs.html#executive" class="block p-6 bg-slate-50 rounded-lg border border-slate-200 hover:border-indigo-400 transition-colors">
+                        <h3 class="font-bold text-indigo-700 mb-2">Executive Brief</h3>
+                        <p class="text-sm text-slate-600">High-level summary for technical leaders and decision-makers.</p>
+                    </a>
+                    <a href="briefs.html#board" class="block p-6 bg-slate-50 rounded-lg border border-slate-200 hover:border-indigo-400 transition-colors">
+                        <h3 class="font-bold text-indigo-700 mb-2">Board Brief</h3>
+                        <p class="text-sm text-slate-600">Strategic overview of governance risks and architectural implications.</p>
+                    </a>
+                    <a href="https://github.com/rmax-ai/system-prompts-forensics" class="block p-6 bg-slate-50 rounded-lg border border-slate-200 hover:border-indigo-400 transition-colors md:col-span-2">
+                        <h3 class="font-bold text-indigo-700 mb-2">GitHub Repository</h3>
+                        <p class="text-sm text-slate-600">Access the raw data, normalization scripts, and analysis artifacts.</p>
                     </a>
                 </div>
-                <p class="mb-6 text-indigo-100">Modular, atomic control structures that appear across different assistants. These are the building blocks of predictable agent behavior.</p>
-                <div class="space-y-4">
-                    <div class="border-b border-indigo-800 pb-4">
-                        <code class="text-indigo-300">PGP-004</code>
-                        <span class="font-semibold ml-2">Stop-on-unexpected-change</span>
-                        <p class="text-sm text-indigo-200 mt-1">A circuit breaker that triggers a hard stop if the workspace changes unexpectedly.</p>
-                    </div>
-                    <div class="border-b border-indigo-800 pb-4">
-                        <code class="text-indigo-300">PGP-001</code>
-                        <span class="font-semibold ml-2">Approval-gated escalation</span>
-                        <p class="text-sm text-indigo-200 mt-1">A mechanism to request higher privileges only when a specific tool call is blocked.</p>
+            </section>
+
+            <!-- How to Read This Work -->
+            <section>
+                <h2 class="text-2xl font-semibold mb-6 text-slate-800">How to Read This Work</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="font-bold text-slate-700 mb-2">Engineers & Researchers</h3>
+                        <p class="text-slate-600">Start with the <a href="paper.html" class="text-indigo-600 hover:underline">Research Paper</a> for the taxonomy and governance theory, consult the <a href="report.html" class="text-indigo-600 hover:underline">Technical Report</a> for the comparative analysis, and explore the <a href="appendix.html" class="text-indigo-600 hover:underline">PGP Appendix</a> for modular governance patterns.</p>
                     </div>
                     <div>
-                        <code class="text-indigo-300">PGP-009</code>
-                        <span class="font-semibold ml-2">Identity Disclosure</span>
-                        <p class="text-sm text-indigo-200 mt-1">Hard-coded rules for how an agent must identify itself and its underlying model.</p>
+                        <h3 class="font-bold text-slate-700 mb-2">Executives & Decision-Makers</h3>
+                        <p class="text-slate-600">Review the <a href="briefs.html" class="text-indigo-600 hover:underline">Executive and Board Briefs</a> for a summary of strategic risks and the transition from "vibes" to auditable agent infrastructure.</p>
                     </div>
                 </div>
             </section>
 
-            <!-- Conclusion -->
-            <section class="text-center pt-8">
-                <h2 class="text-2xl font-semibold mb-4 text-slate-800">From "Vibes" to Infrastructure</h2>
-                <p class="text-lg text-slate-600 max-w-2xl mx-auto">
-                    The transition from "Prompt Engineering" to "Agent Architecture" requires moving governance out of hidden strings and into auditable, structured artifacts.
-                </p>
+            <!-- Methodology (High-Level) -->
+            <section>
+                <h2 class="text-2xl font-semibold mb-6 text-slate-800 border-l-4 border-indigo-500 pl-4">Methodology</h2>
+                <div class="prose prose-slate max-w-none">
+                    <p>Our forensic workflow moves from raw observation to structured governance theory:</p>
+                    <ol class="space-y-2">
+                        <li><strong>Prompt Forensics:</strong> Capturing raw HTTP traffic to extract hidden system-level instructions.</li>
+                        <li><strong>Comparative Analysis:</strong> Normalizing heterogeneous prompts into a shared structural schema to identify stable governance regimes.</li>
+                        <li><strong>Governance Primitives Abstraction:</strong> Cataloging recurring, atomic control structures (PGPs) that allocate authority and bound agent action.</li>
+                    </ol>
+                </div>
+            </section>
+
+            <!-- Disclosure -->
+            <section id="disclosure" class="bg-slate-100 p-8 rounded-xl border border-slate-200">
+                <h2 class="text-xl font-semibold mb-4 text-slate-800">Disclosure</h2>
+                <div class="text-sm text-slate-600 space-y-4">
+                    <p>This research was produced with significant AI assistance across the analysis and synthesis pipeline, primarily using <strong>GPT-5.2</strong> for data analysis and report generation. Final editorial oversight and methodology development were performed by the author.</p>
+                    <p>The author provides the methodology and oversight but does not claim individual analytical judgments derived through the AI-driven methodology. All outputs were reviewed and verified prior to publication.</p>
+                </div>
+            </section>
+
+            <!-- Citation & Status -->
+            <section class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-slate-200">
+                <div>
+                    <h2 class="text-xl font-semibold mb-4 text-slate-800">Citation</h2>
+                    <p class="text-sm text-slate-600 mb-2">Espinoza, R. M. (2026). <em>System Prompt Forensics: Governance Structures in AI Developer Assistants</em>. v1.0.0. <a href="https://system-prompts-forensics.rmax.ai" class="text-indigo-600 hover:underline">https://system-prompts-forensics.rmax.ai</a></p>
+                    <a href="https://github.com/rmax-ai/system-prompts-forensics/blob/main/CITATION.cff" class="text-xs text-indigo-500 hover:underline font-mono">View CITATION.cff</a>
+                </div>
+                <div class="text-right md:text-left">
+                    <h2 class="text-xl font-semibold mb-4 text-slate-800">Status</h2>
+                    <p class="text-sm text-slate-600"><strong>Version:</strong> 1.0.0</p>
+                    <p class="text-sm text-slate-600"><strong>Release Date:</strong> January 3, 2026</p>
+                    <p class="text-sm text-slate-600"><strong>Stability:</strong> Publication-grade / Archival</p>
+                </div>
             </section>
         </main>
 
         <footer class="mt-24 pt-8 border-t border-slate-200 text-center text-slate-500 text-sm">
-            <div class="mb-8 p-6 bg-slate-100 rounded-lg text-left max-w-2xl mx-auto border border-slate-200">
-                <h3 class="text-slate-800 font-semibold mb-2">Cite this work:</h3>
-                <p class="font-mono text-xs leading-relaxed">
-                    Espinoza, R. M. (2026). <i>System Prompt Forensics: A Governance Framework for AI Developer Tools</i> (Version 0.9.0). [Computer software]. https://github.com/rmax-ai/system-prompts-forensics/releases/tag/v0.9.0
-                </p>
-            </div>
-            <p>&copy; 2026 System Prompt Forensics Project</p>
-            <p class="mt-2">For the full technical analysis, see the <a href="report.html" class="text-indigo-600 hover:underline">Research Report</a> and the <a href="appendix.html" class="text-indigo-600 hover:underline">PGP Appendix</a>.</p>
+            <p>Author: R. Max Espinoza | <a href="https://github.com/rmax-ai/system-prompts-forensics/" class="text-indigo-600 hover:underline">GitHub Repository</a></p>
+            <p class="mt-2">Produced with AI assistance (GPT-5.2). See <a href="index.html#disclosure" class="text-indigo-600 hover:underline">Disclosure</a> for details.</p>
+            <p class="mt-4">&copy; 2026 R. Max Espinoza. Content licensed CC BY 4.0. Code licensed MIT.</p>
+            <p class="mt-2"><a href="paper.html" class="text-indigo-600 hover:underline">Research Paper</a> | <a href="report.html" class="text-indigo-600 hover:underline">Technical Report</a> | <a href="appendix.html" class="text-indigo-600 hover:underline">Appendix</a> | <a href="briefs.html" class="text-indigo-600 hover:underline">Briefs</a></p>
         </footer>
     </div>
 </body>
