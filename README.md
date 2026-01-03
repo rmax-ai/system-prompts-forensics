@@ -1,3 +1,5 @@
+![System Prompt Forensics Header](images/header.png)
+
 # System Prompt Forensics: Governance Structures in AI Developer Assistants
 
 ### What This Is
