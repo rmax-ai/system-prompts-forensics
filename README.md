@@ -1,3 +1,5 @@
+![Header](images/header.png)
+
 # System Prompt Forensics
 
 System prompts in AI-assisted developer tools are more than just task instructions; they function as implicit "constitutions" that define an agent's identity, authority, and safety boundaries. This repository provides a forensic framework for treating these prompts as governance artifacts, offering a methodology to normalize, analyze, and compare them across major assistants like GitHub Copilot and Codex. By decomposing complex prompts into modular **Prompt Governance Primitives (PGPs)**, we surface the architectural trade-offs and control mechanisms that shape modern agentic systems, moving governance from hidden strings into auditable infrastructure.
