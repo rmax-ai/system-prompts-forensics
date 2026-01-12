@@ -22,7 +22,9 @@
       const parts = p.split('.');
       if (parts.length < 2) return undefined;
       const ext = parts.pop().toLowerCase();
-      return ext;
+      // Only treat certain known extensions as downloads to avoid flagging .html pages
+      const ALLOWED = new Set(['pdf','zip','gz','tar','csv','tsv','xlsx','xls','pptx','ppt','docx','doc','png','jpg','jpeg','svg','cff','md','txt']);
+      return ALLOWED.has(ext) ? ext : undefined;
     } catch (err) { return undefined; }
   }
 

@@ -10,10 +10,12 @@ test('helper functions exposed on window', async ({ page }) => {
   const helpers = await page.evaluate(() => ({
     host: window.AnalyticsHelpers.normalizeHost('www.GitHub.com'),
     ext: window.AnalyticsHelpers.fileTypeFromPath('/path/to/file.PDF?download=1'),
+    extHtml: window.AnalyticsHelpers.fileTypeFromPath('/paper.html'),
     email: window.AnalyticsHelpers.sanitizeEmail('mailto:hello@rmax.ai')
   }));
 
   expect(helpers.host).toBe('github.com');
   expect(helpers.ext).toBe('pdf');
+  expect(helpers.extHtml).toBeUndefined();
   expect(helpers.email).toBe('@rmax.ai');
 });
